@@ -1,0 +1,237 @@
+#include <LiquidCrystal.h>
+
+// LCD pin connections: RS, EN, D4, D5, D6, D7
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+// Button pins
+const int setTimeBtn = A0;
+const int setAlarmBtn = A1;
+const int incBtn = A2;
+const int nextBtn = A3;
+
+// Buzzer
+const int buzzer = 8;
+
+// Time variables
+int hour = 12, minute = 0, second = 0;
+int alarmHour = 7, alarmMinute = 0;
+bool alarmSet = false;
+bool alarmTriggered = false;
+
+unsigned long prevMillis = 0;
+unsigned long lastButtonCheck = 0;
+unsigned long alarmStartTime = 0;
+
+// Modes
+enum Mode { NORMAL, SET_TIME, SET_ALARM };
+Mode mode = NORMAL;
+int editField = 0; // 0 = hour, 1 = minute
+
+// Button debouncing
+bool lastSetTimeState = HIGH;
+bool lastSetAlarmState = HIGH;
+bool lastIncState = HIGH;
+bool lastNextState = HIGH;
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50;
+
+void setup() {
+  lcd.begin(16, 2);
+  lcd.clear();
+  lcd.print("Arduino Clock");
+  delay(1000);
+  lcd.clear();
+
+  pinMode(setTimeBtn, INPUT_PULLUP);
+  pinMode(setAlarmBtn, INPUT_PULLUP);
+  pinMode(incBtn, INPUT_PULLUP);
+  pinMode(nextBtn, INPUT_PULLUP);
+  pinMode(buzzer, OUTPUT);
+  
+  digitalWrite(buzzer, LOW);
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+  
+  updateTime();
+  
+  // Only display in normal mode
+  if (mode == NORMAL) {
+    displayTime();
+  }
+
+  // Check buttons with debouncing
+  checkButtons();
+
+  // Handle setting modes
+  if (mode == SET_TIME || mode == SET_ALARM) {
+    handleSettingMode();
+  }
+
+  // --- Alarm check --- (only in normal mode)
+  if (mode == NORMAL && alarmSet && !alarmTriggered) {
+    if (hour == alarmHour && minute == alarmMinute && second == 0) {
+      alarmTriggered = true;
+      alarmStartTime = currentMillis;
+    }
+  }
+
+  // Handle active alarm
+  if (alarmTriggered) {
+    handleAlarm();
+  }
+}
+
+// --- Time counting using millis() ---
+void updateTime() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - prevMillis >= 1000) {
+    prevMillis = currentMillis;
+    second++;
+    if (second >= 60) { second = 0; minute++; }
+    if (minute >= 60) { minute = 0; hour++; }
+    if (hour >= 24) hour = 0;
+  }
+}
+
+// --- Improved button checking with debouncing ---
+void checkButtons() {
+  unsigned long currentMillis = millis();
+  
+  // Only check buttons every 50ms for debouncing
+  if (currentMillis - lastButtonCheck < 50) return;
+  lastButtonCheck = currentMillis;
+
+  // Read current button states
+  bool currentSetTime = digitalRead(setTimeBtn);
+  bool currentSetAlarm = digitalRead(setAlarmBtn);
+  bool currentInc = digitalRead(incBtn);
+  bool currentNext = digitalRead(nextBtn);
+
+  // Set Time button - mode switching
+  if (currentSetTime == LOW && lastSetTimeState == HIGH) {
+    if (mode == NORMAL) {
+      mode = SET_TIME;
+      editField = 0;
+      lcd.clear();
+      lcd.print("Set Time Mode");
+      delay(500);
+      lcd.clear();
+    } else if (mode == SET_TIME) {
+      mode = NORMAL;
+      lcd.clear();
+      lcd.print("Time Saved!");
+      delay(500);
+      lcd.clear();
+    }
+  }
+
+  // Set Alarm button - mode switching
+  if (currentSetAlarm == LOW && lastSetAlarmState == HIGH) {
+    if (mode == NORMAL) {
+      mode = SET_ALARM;
+      editField = 0;
+      alarmSet = true;
+      lcd.clear();
+      lcd.print("Set Alarm Mode");
+      delay(500);
+      lcd.clear();
+    } else if (mode == SET_ALARM) {
+      mode = NORMAL;
+      lcd.clear();
+      lcd.print("Alarm Saved!");
+      delay(500);
+      lcd.clear();
+    }
+  }
+
+  // Increment button - only in setting modes
+  if (currentInc == LOW && lastIncState == HIGH && mode != NORMAL) {
+    if (mode == SET_TIME) {
+      if (editField == 0) { hour = (hour + 1) % 24; }
+      else { minute = (minute + 1) % 60; }
+    } else if (mode == SET_ALARM) {
+      if (editField == 0) { alarmHour = (alarmHour + 1) % 24; }
+      else { alarmMinute = (alarmMinute + 1) % 60; }
+    }
+  }
+
+  // Next button - only in setting modes
+  if (currentNext == LOW && lastNextState == HIGH && mode != NORMAL) {
+    editField = 1 - editField; // Toggle between 0 and 1
+  }
+
+  // Update last button states
+  lastSetTimeState = currentSetTime;
+  lastSetAlarmState = currentSetAlarm;
+  lastIncState = currentInc;
+  lastNextState = currentNext;
+}
+
+// --- Handle time/alarm setting mode ---
+void handleSettingMode() {
+  int *h, *m;
+  const char* modeText;
+  
+  if (mode == SET_TIME) {
+    h = &hour;
+    m = &minute;
+    modeText = "Set Time:";
+  } else {
+    h = &alarmHour;
+    m = &alarmMinute;
+    modeText = "Set Alarm:";
+  }
+
+  lcd.setCursor(0, 0);
+  lcd.print(modeText);
+  lcd.setCursor(0, 1);
+  lcd.print(*h < 10 ? "0" : ""); lcd.print(*h);
+  lcd.print(":");
+  lcd.print(*m < 10 ? "0" : ""); lcd.print(*m);
+  lcd.print(editField == 0 ? " <-Hr" : " <-Min");
+}
+
+// --- Handle alarm ringing ---
+void handleAlarm() {
+  unsigned long currentMillis = millis();
+  
+  // Ring alarm for 10 seconds max
+  if (currentMillis - alarmStartTime < 10000) {
+    lcd.setCursor(0, 1);
+    lcd.print("!! ALARM RING !!");
+    
+    // Beep pattern
+    digitalWrite(buzzer, HIGH);
+    delay(300);
+    digitalWrite(buzzer, LOW);
+    delay(700);
+  } else {
+    // Stop alarm after 10 seconds
+    alarmTriggered = false;
+    digitalWrite(buzzer, LOW);
+    lcd.clear();
+  }
+}
+
+// --- Display Time and Alarm ---
+void displayTime() {
+  lcd.setCursor(0, 0);
+  lcd.print("Time ");
+  lcd.print(hour < 10 ? "0" : ""); lcd.print(hour);
+  lcd.print(":");
+  lcd.print(minute < 10 ? "0" : ""); lcd.print(minute);
+  lcd.print(":");
+  lcd.print(second < 10 ? "0" : ""); lcd.print(second);
+
+  lcd.setCursor(0, 1);
+  if (alarmSet) {
+    lcd.print("Alarm ");
+    lcd.print(alarmHour < 10 ? "0" : ""); lcd.print(alarmHour);
+    lcd.print(":");
+    lcd.print(alarmMinute < 10 ? "0" : ""); lcd.print(alarmMinute);
+  } else {
+    lcd.print("Alarm: --:--    ");
+  }
+}
