@@ -1,0 +1,84 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// time variables
+unsigned long prevMillis = 0;
+unsigned long currentMillis;
+int seconds = 0, minutes = 0, hours = 12;
+
+// buttons
+const int setBtn = 2;
+const int hourBtn = 3;
+const int minBtn = 4;
+const int secResetBtn = 5;
+
+int mode = 0; // 0=run, 1=edit hour, 2=edit minute
+
+void setup() {
+  lcd.init();
+  lcd.backlight();
+
+  pinMode(setBtn, INPUT_PULLUP);
+  pinMode(hourBtn, INPUT_PULLUP);
+  pinMode(minBtn, INPUT_PULLUP);
+  pinMode(secResetBtn, INPUT_PULLUP);
+}
+
+void loop() {
+  currentMillis = millis();
+
+  if (currentMillis - prevMillis >= 1000) {
+    prevMillis = currentMillis;
+    seconds++;
+
+    if (seconds >= 60) {
+      seconds = 0;
+      minutes++;
+      if (minutes >= 60) {
+        minutes = 0;
+        hours++;
+        if (hours >= 24) hours = 0;
+      }
+    }
+  }
+
+  // BUTTONS
+  if (!digitalRead(setBtn)) {
+    delay(200);
+    mode = (mode + 1) % 3;
+  }
+  if (!digitalRead(hourBtn) && mode == 1) {
+    hours = (hours + 1) % 24;
+    delay(200);
+  }
+  if (!digitalRead(minBtn) && mode == 2) {
+    minutes = (minutes + 1) % 60;
+    delay(200);
+  }
+  if (!digitalRead(secResetBtn)) {
+    seconds = 0;
+    delay(200);
+  }
+
+  // Display
+  lcd.setCursor(0, 0);
+  lcd.print(" Digital Clock ");
+
+  lcd.setCursor(0, 1);
+  if (hours < 10) lcd.print("0");
+  lcd.print(hours);
+  lcd.print(":");
+  if (minutes < 10) lcd.print("0");
+  lcd.print(minutes);
+  lcd.print(":");
+  if (seconds < 10) lcd.print("0");
+  lcd.print(seconds);
+
+  // Indicate edit mode
+  lcd.print(" ");
+  if (mode == 1) lcd.print("H");
+  else if (mode == 2) lcd.print("M");
+  else lcd.print(" ");
+}
