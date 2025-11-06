@@ -1,0 +1,326 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// I2C LCD Configuration (change address if needed)
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // Try 0x3F if 0x27 doesn't work
+
+// Button Pins - Updated to D2, D3, D4, D5
+const int setTimeBtn = 2;
+const int setAlarmBtn = 3;
+const int incBtn = 4;
+const int nextBtn = 5;
+
+// Buzzer Pin - Updated to D8
+const int buzzer = 8;
+
+// Time Variables
+int hour = 12, minute = 0, second = 0;
+int alarmHour = 7, alarmMinute = 0;
+bool alarmSet = false;
+bool alarmTriggered = false;
+
+// Timing Variables
+unsigned long prevMillis = 0;
+unsigned long lastButtonCheck = 0;
+unsigned long alarmStartTime = 0;
+
+// System Modes
+enum Mode { NORMAL, SET_TIME, SET_ALARM };
+Mode mode = NORMAL;
+int editField = 0;  // 0 = hour, 1 = minute
+
+// Button Debouncing
+bool lastSetTimeState = HIGH;
+bool lastSetAlarmState = HIGH;
+bool lastIncState = HIGH;
+bool lastNextState = HIGH;
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Initialize I2C LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Digital Clock");
+  lcd.setCursor(0, 1);
+  lcd.print("Initializing...");
+  delay(2000);
+  lcd.clear();
+
+  // Initialize Button Pins with Internal Pull-up - UPDATED PINS
+  pinMode(setTimeBtn, INPUT_PULLUP);
+  pinMode(setAlarmBtn, INPUT_PULLUP);
+  pinMode(incBtn, INPUT_PULLUP);
+  pinMode(nextBtn, INPUT_PULLUP);
+  
+  // Initialize Buzzer - UPDATED PIN
+  pinMode(buzzer, OUTPUT);
+  digitalWrite(buzzer, LOW);
+  
+  Serial.println("Alarm Clock Started - Pins D2,D3,D4,D5,D8");
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+  
+  // Update time every second
+  updateTime();
+  
+  // Display in normal mode only
+  if (mode == NORMAL) {
+    displayTime();
+  }
+
+  // Check button presses
+  checkButtons();
+
+  // Handle setting modes
+  if (mode == SET_TIME || mode == SET_ALARM) {
+    handleSettingMode();
+  }
+
+  // Check alarm condition
+  if (mode == NORMAL && alarmSet && !alarmTriggered) {
+    if (hour == alarmHour && minute == alarmMinute && second == 0) {
+      alarmTriggered = true;
+      alarmStartTime = currentMillis;
+      lcd.clear();
+      lcd.print("ALARM TRIGGERED!");
+      Serial.println("Alarm Activated!");
+    }
+  }
+
+  // Handle ringing alarm
+  if (alarmTriggered) {
+    handleAlarm();
+  }
+}
+
+// Update time using millis() instead of delay()
+void updateTime() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - prevMillis >= 1000) {
+    prevMillis = currentMillis;
+    second++;
+    if (second >= 60) { 
+      second = 0; 
+      minute++; 
+      // Debug output every minute
+      Serial.print("Time: ");
+      Serial.print(hour);
+      Serial.print(":");
+      Serial.print(minute);
+      Serial.print(":");
+      Serial.println(second);
+    }
+    if (minute >= 60) { 
+      minute = 0; 
+      hour++; 
+    }
+    if (hour >= 24) { 
+      hour = 0; 
+    }
+  }
+}
+
+// Button handling with debouncing
+void checkButtons() {
+  unsigned long currentMillis = millis();
+  
+  // Debounce check - only read buttons every 50ms
+  if (currentMillis - lastButtonCheck < 50) return;
+  lastButtonCheck = currentMillis;
+
+  // Read current button states - UPDATED PINS
+  bool currentSetTime = digitalRead(setTimeBtn);
+  bool currentSetAlarm = digitalRead(setAlarmBtn);
+  bool currentInc = digitalRead(incBtn);
+  bool currentNext = digitalRead(nextBtn);
+
+  // Set Time Button Pressed (D2)
+  if (currentSetTime == LOW && lastSetTimeState == HIGH) {
+    if (mode == NORMAL) {
+      // Enter time setting mode
+      mode = SET_TIME;
+      editField = 0;
+      lcd.clear();
+      lcd.print("Set Time Mode");
+      delay(500);
+      lcd.clear();
+      Serial.println("Entered Time Setting Mode");
+    } else if (mode == SET_TIME) {
+      // Save and exit time setting
+      mode = NORMAL;
+      lcd.clear();
+      lcd.print("Time Saved!");
+      delay(500);
+      lcd.clear();
+      Serial.println("Time Settings Saved");
+    }
+  }
+
+  // Set Alarm Button Pressed (D3)
+  if (currentSetAlarm == LOW && lastSetAlarmState == HIGH) {
+    if (mode == NORMAL) {
+      // Enter alarm setting mode
+      mode = SET_ALARM;
+      editField = 0;
+      alarmSet = true;
+      lcd.clear();
+      lcd.print("Set Alarm Mode");
+      delay(500);
+      lcd.clear();
+      Serial.println("Entered Alarm Setting Mode");
+    } else if (mode == SET_ALARM) {
+      // Save and exit alarm setting
+      mode = NORMAL;
+      lcd.clear();
+      lcd.print("Alarm Saved!");
+      delay(500);
+      lcd.clear();
+      Serial.println("Alarm Settings Saved");
+    }
+  }
+
+  // Increment Button Pressed (D4) - only in setting modes
+  if (currentInc == LOW && lastIncState == HIGH && mode != NORMAL) {
+    if (mode == SET_TIME) {
+      if (editField == 0) { 
+        hour = (hour + 1) % 24; 
+        Serial.print("Time Hour: ");
+        Serial.println(hour);
+      } else { 
+        minute = (minute + 1) % 60; 
+        Serial.print("Time Minute: ");
+        Serial.println(minute);
+      }
+    } else if (mode == SET_ALARM) {
+      if (editField == 0) { 
+        alarmHour = (alarmHour + 1) % 24; 
+        Serial.print("Alarm Hour: ");
+        Serial.println(alarmHour);
+      } else { 
+        alarmMinute = (alarmMinute + 1) % 60; 
+        Serial.print("Alarm Minute: ");
+        Serial.println(alarmMinute);
+      }
+    }
+  }
+
+  // Next Button Pressed (D5) - only in setting modes
+  if (currentNext == LOW && lastNextState == HIGH && mode != NORMAL) {
+    editField = 1 - editField;  // Toggle between hour and minute
+    Serial.print("Now Editing: ");
+    Serial.println(editField == 0 ? "Hour" : "Minute");
+  }
+
+  // Update last button states for debouncing
+  lastSetTimeState = currentSetTime;
+  lastSetAlarmState = currentSetAlarm;
+  lastIncState = currentInc;
+  lastNextState = currentNext;
+}
+
+// Handle time/alarm setting display
+void handleSettingMode() {
+  int *currentHour, *currentMinute;
+  const char* modeText;
+  
+  if (mode == SET_TIME) {
+    currentHour = &hour;
+    currentMinute = &minute;
+    modeText = "Set Time:";
+  } else {
+    currentHour = &alarmHour;
+    currentMinute = &alarmMinute;
+    modeText = "Set Alarm:";
+  }
+
+  // Display setting interface
+  lcd.setCursor(0, 0);
+  lcd.print(modeText);
+  lcd.setCursor(0, 1);
+  
+  // Display hours with leading zero
+  if (*currentHour < 10) lcd.print("0");
+  lcd.print(*currentHour);
+  lcd.print(":");
+  
+  // Display minutes with leading zero
+  if (*currentMinute < 10) lcd.print("0");
+  lcd.print(*currentMinute);
+  
+  // Show which field is being edited
+  if (editField == 0) {
+    lcd.print(" <-Hr ");
+  } else {
+    lcd.print(" <-Min");
+  }
+}
+
+// Handle alarm ringing with non-blocking beeps
+void handleAlarm() {
+  unsigned long currentMillis = millis();
+  
+  // Ring alarm for 10 seconds maximum
+  if (currentMillis - alarmStartTime < 10000) {
+    // Display alarm message
+    lcd.setCursor(0, 1);
+    lcd.print("!! ALARM RING !!");
+    
+    // Create beeping sound without blocking - UPDATED BUZZER PIN
+    static unsigned long lastBeep = 0;
+    static bool beepState = false;
+    
+    if (currentMillis - lastBeep >= 300) {
+      beepState = !beepState;
+      digitalWrite(buzzer, beepState);
+      lastBeep = currentMillis;
+    }
+  } else {
+    // Stop alarm after 10 seconds
+    alarmTriggered = false;
+    digitalWrite(buzzer, LOW);
+    lcd.clear();
+    Serial.println("Alarm Stopped");
+  }
+}
+
+// Display current time and alarm status
+void displayTime() {
+  static unsigned long lastDisplayUpdate = 0;
+  unsigned long currentMillis = millis();
+  
+  // Update display every 200ms to prevent flickering
+  if (currentMillis - lastDisplayUpdate < 200) return;
+  lastDisplayUpdate = currentMillis;
+
+  // Line 1: Current Time (HH:MM:SS)
+  lcd.setCursor(0, 0);
+  lcd.print("Time ");
+  if (hour < 10) lcd.print("0");
+  lcd.print(hour);
+  lcd.print(":");
+  if (minute < 10) lcd.print("0");
+  lcd.print(minute);
+  lcd.print(":");
+  if (second < 10) lcd.print("0");
+  lcd.print(second);
+  lcd.print("   ");  // Clear any leftover characters
+
+  // Line 2: Alarm Status
+  lcd.setCursor(0, 1);
+  if (alarmSet) {
+    lcd.print("Alarm ");
+    if (alarmHour < 10) lcd.print("0");
+    lcd.print(alarmHour);
+    lcd.print(":");
+    if (alarmMinute < 10) lcd.print("0");
+    lcd.print(alarmMinute);
+    lcd.print(" ON ");
+  } else {
+    lcd.print("Alarm: --:-- OFF");
+  }
+}
