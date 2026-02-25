@@ -1,0 +1,240 @@
+/* Reports CSS */
+
+.report-section {
+    padding: 2rem;
+    background: var(--bg-color);
+    min-height: 70vh;
+}
+
+.report-controls {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.date-range {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.date-range .form-group {
+    margin-bottom: 0;
+    min-width: 150px;
+}
+
+.date-range label {
+    font-size: 1.4rem;
+    color: var(--black);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.date-range input {
+    padding: 1rem;
+    font-size: 1.4rem;
+    border: var(--border);
+    border-radius: 0.5rem;
+    width: 100%;
+}
+
+.report-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.report-actions .btn {
+    margin-top: 0;
+    padding: 1rem 2rem;
+    font-size: 1.4rem;
+}
+
+.ledger-selector {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.ledger-selector label {
+    font-size: 1.6rem;
+    color: var(--black);
+    font-weight: 500;
+}
+
+.ledger-selector select {
+    flex: 1;
+    min-width: 300px;
+    padding: 1rem;
+    font-size: 1.6rem;
+    border: var(--border);
+    border-radius: 0.5rem;
+    background: var(--bg-color);
+}
+
+.report-content {
+    background: var(--white);
+    padding: 3rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    overflow-x: auto;
+}
+
+.report-content .loading {
+    text-align: center;
+    padding: 5rem;
+    color: var(--light-color);
+    font-size: 1.8rem;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.4rem;
+}
+
+.report-table th {
+    background: var(--main-color);
+    color: var(--white);
+    padding: 1.2rem;
+    font-weight: 600;
+    text-align: left;
+}
+
+.report-table td {
+    padding: 1rem;
+    border-bottom: var(--border);
+    color: var(--black);
+}
+
+.report-table tr:last-child td {
+    border-bottom: none;
+}
+
+.report-table .total-row {
+    background: var(--bg-color);
+    font-weight: bold;
+}
+
+.report-table .total-row td {
+    border-top: 2px solid var(--main-color);
+}
+
+.report-summary {
+    margin-top: 3rem;
+    padding: 2rem;
+    background: var(--bg-color);
+    border-radius: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.summary-item {
+    text-align: center;
+}
+
+.summary-item .label {
+    font-size: 1.4rem;
+    color: var(--light-color);
+    margin-bottom: 0.5rem;
+}
+
+.summary-item .value {
+    font-size: 2.4rem;
+    color: var(--main-color);
+    font-weight: bold;
+}
+
+.summary-item .value.positive {
+    color: var(--secondary-color);
+}
+
+.summary-item .value.negative {
+    color: #dc3545;
+}
+
+.report-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.report-header h2 {
+    font-size: 2.4rem;
+    color: var(--black);
+    margin-bottom: 0.5rem;
+}
+
+.report-header p {
+    font-size: 1.4rem;
+    color: var(--light-color);
+}
+
+/* Print styles */
+@media print {
+    .header,
+    .footer,
+    .report-controls,
+    .ledger-selector,
+    .report-actions,
+    .btn {
+        display: none !important;
+    }
+    
+    .report-section {
+        padding: 0;
+    }
+    
+    .report-content {
+        box-shadow: none;
+        padding: 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .report-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-range {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-range .form-group {
+        width: 100%;
+    }
+    
+    .report-actions {
+        justify-content: stretch;
+    }
+    
+    .report-actions .btn {
+        flex: 1;
+    }
+    
+    .ledger-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .ledger-selector select {
+        min-width: auto;
+    }
+}
