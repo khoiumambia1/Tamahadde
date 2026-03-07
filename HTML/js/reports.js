@@ -22,7 +22,7 @@ function loadLedgersForSelector() {
     
     let options = '<option value="">-- Select Ledger --</option>';
     
-    // Get all unique ledgers from transactions
+    // Get all unique ledgers from transactions (global transactions variable)
     const uniqueLedgers = [...new Set(transactions.map(t => t.ledger))];
     
     uniqueLedgers.sort().forEach(ledger => {
@@ -204,7 +204,6 @@ function loadTrialBalance() {
     `;
     
     Object.keys(balances).sort().forEach(ledger => {
-        const balance = balances[ledger].debit - balances[ledger].credit;
         totalDebit += balances[ledger].debit;
         totalCredit += balances[ledger].credit;
         
@@ -262,101 +261,270 @@ function loadProfitLoss() {
         return;
     }
     
-    // Calculate income and expenses
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    const incomeDetails = {};
-    const expenseDetails = {};
+    // Access ledgers from global scope
+    const ledgers = window.ledgers || [];
+    
+    // Define P&L groups directly in the function to ensure they're available
+    const pnlGroups = {
+        income: [
+            { value: 'operating_revenue', label: 'Operating Revenue' },
+            { value: 'other_income', label: 'Other Income' },
+            { value: 'interest_income', label: 'Interest Income' },
+            { value: 'commission', label: 'Commission' }
+        ],
+        expense: [
+            { value: 'operating_expenses', label: 'Operating Expenses' },
+            { value: 'administrative', label: 'Administrative Expenses' },
+            { value: 'selling_distribution', label: 'Selling & Distribution' },
+            { value: 'financial_charges', label: 'Financial Charges' },
+            { value: 'depreciation', label: 'Depreciation' },
+            { value: 'staff_cost', label: 'Staff Cost' },
+            { value: 'rent_utilities', label: 'Rent & Utilities' },
+            { value: 'marketing', label: 'Marketing & Advertising' },
+            { value: 'travel_conveyance', label: 'Travel & Conveyance' },
+            { value: 'office_expenses', label: 'Office Expenses' },
+            { value: 'professional_fees', label: 'Professional Fees' },
+            { value: 'repairs_maintenance', label: 'Repairs & Maintenance' },
+            { value: 'insurance', label: 'Insurance' },
+            { value: 'taxes', label: 'Taxes' },
+            { value: 'miscellaneous', label: 'Miscellaneous' }
+        ]
+    };
+    
+    // Group income by P&L groups
+    const incomeByGroup = {};
+    const expenseByGroup = {};
+    let ungroupedIncome = 0;
+    let ungroupedExpenses = 0;
     
     filteredTransactions.forEach(t => {
-        const ledgerInfo = ledgers.find(l => l.name === t.ledger);
+        // Find ledger info
+        const ledgerInfo = ledgers.find(l => l.name.toLowerCase() === t.ledger.toLowerCase());
         
-        if (ledgerInfo?.type === 'income' || t.type === 'receipt') {
-            totalIncome += t.credit;
-            incomeDetails[t.ledger] = (incomeDetails[t.ledger] || 0) + t.credit;
-        } else if (ledgerInfo?.type === 'expense' || t.type === 'payment') {
-            totalExpenses += t.debit;
-            expenseDetails[t.ledger] = (expenseDetails[t.ledger] || 0) + t.debit;
+        // Determine if this is income or expense based on transaction type and ledger type
+        const isIncome = (t.type === 'receipt' && t.credit > 0) || 
+                        (ledgerInfo?.type === 'income') ||
+                        (t.entry_type === 'receipt') ||
+                        (t.debit === 0 && t.credit > 0 && t.type === 'receipt');
+        
+        const isExpense = (t.type === 'payment' && t.debit > 0) || 
+                         (ledgerInfo?.type === 'expense') ||
+                         (t.entry_type === 'payment') ||
+                         (t.debit > 0 && t.credit === 0 && t.type === 'payment');
+        
+        if (isIncome) {
+            const amount = t.credit || t.debit || 0;
+            
+            if (ledgerInfo?.group) {
+                if (!incomeByGroup[ledgerInfo.group]) {
+                    const groupLabel = pnlGroups.income.find(g => g.value === ledgerInfo.group)?.label || ledgerInfo.group;
+                    incomeByGroup[ledgerInfo.group] = {
+                        label: groupLabel,
+                        total: 0,
+                        ledgers: []
+                    };
+                }
+                incomeByGroup[ledgerInfo.group].total += amount;
+                incomeByGroup[ledgerInfo.group].ledgers.push({
+                    name: t.ledger,
+                    amount: amount
+                });
+            } else {
+                ungroupedIncome += amount;
+            }
+        } else if (isExpense) {
+            const amount = t.debit || t.credit || 0;
+            
+            if (ledgerInfo?.group) {
+                if (!expenseByGroup[ledgerInfo.group]) {
+                    const groupLabel = pnlGroups.expense.find(g => g.value === ledgerInfo.group)?.label || ledgerInfo.group;
+                    expenseByGroup[ledgerInfo.group] = {
+                        label: groupLabel,
+                        total: 0,
+                        ledgers: []
+                    };
+                }
+                expenseByGroup[ledgerInfo.group].total += amount;
+                expenseByGroup[ledgerInfo.group].ledgers.push({
+                    name: t.ledger,
+                    amount: amount
+                });
+            } else {
+                ungroupedExpenses += amount;
+            }
         }
     });
     
-    const netProfit = totalIncome - totalExpenses;
+    let totalIncome = ungroupedIncome;
+    let totalExpenses = ungroupedExpenses;
     
     let reportHTML = `
         <div class="report-header">
             <h2>Profit & Loss Statement</h2>
-            <p>Period: ${fromDate} to ${toDate}</p>
+            <p>Period: ${formatDate(fromDate)} to ${formatDate(toDate)}</p>
         </div>
-        
-        <h3>Income</h3>
+    `;
+    
+    // INCOME SECTION WITH GROUPS
+    reportHTML += `
+        <h3 style="margin-top: 2rem;">Income</h3>
         <table class="report-table">
             <thead>
                 <tr>
                     <th>Particulars</th>
-                    <th>Amount</th>
+                    <th style="text-align: right;">Amount</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
-    Object.keys(incomeDetails).sort().forEach(ledger => {
+    // Calculate total from groups
+    let groupedIncomeTotal = 0;
+    
+    // Show grouped income
+    Object.keys(incomeByGroup).sort().forEach(groupKey => {
+        const group = incomeByGroup[groupKey];
+        groupedIncomeTotal += group.total;
+        
         reportHTML += `
-            <tr>
-                <td>${ledger}</td>
-                <td>${incomeDetails[ledger].toFixed(2)}</td>
+            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                <td>${group.label}</td>
+                <td style="text-align: right;">${formatNumber(group.total)}</td>
             </tr>
         `;
+        
+        // Show individual ledgers in this group (indented)
+        group.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
+            reportHTML += `
+                <tr>
+                    <td style="padding-left: 3rem;">&nbsp;&nbsp;&nbsp;↳ ${ledger.name}</td>
+                    <td style="text-align: right;">${formatNumber(ledger.amount)}</td>
+                </tr>
+            `;
+        });
     });
+    
+    // Show ungrouped income
+    if (ungroupedIncome > 0) {
+        reportHTML += `
+            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                <td>Other Income (Ungrouped)</td>
+                <td style="text-align: right;">${formatNumber(ungroupedIncome)}</td>
+            </tr>
+        `;
+    }
+    
+    totalIncome = groupedIncomeTotal + ungroupedIncome;
     
     reportHTML += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
                     <td><strong>Total Income</strong></td>
-                    <td><strong>${totalIncome.toFixed(2)}</strong></td>
+                    <td style="text-align: right;"><strong>${formatNumber(totalIncome)}</strong></td>
                 </tr>
             </tfoot>
         </table>
-        
-        <h3 style="margin-top: 2rem;">Expenses</h3>
+    `;
+    
+    // EXPENSE SECTION WITH GROUPS
+    reportHTML += `
+        <h3 style="margin-top: 3rem;">Expenses</h3>
         <table class="report-table">
             <thead>
                 <tr>
                     <th>Particulars</th>
-                    <th>Amount</th>
+                    <th style="text-align: right;">Amount</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
-    Object.keys(expenseDetails).sort().forEach(ledger => {
+    // Calculate total from groups
+    let groupedExpenseTotal = 0;
+    
+    // Show grouped expenses
+    Object.keys(expenseByGroup).sort().forEach(groupKey => {
+        const group = expenseByGroup[groupKey];
+        groupedExpenseTotal += group.total;
+        
         reportHTML += `
-            <tr>
-                <td>${ledger}</td>
-                <td>${expenseDetails[ledger].toFixed(2)}</td>
+            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                <td>${group.label}</td>
+                <td style="text-align: right;">${formatNumber(group.total)}</td>
             </tr>
         `;
+        
+        // Show individual ledgers in this group (indented)
+        group.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
+            reportHTML += `
+                <tr>
+                    <td style="padding-left: 3rem;">&nbsp;&nbsp;&nbsp;↳ ${ledger.name}</td>
+                    <td style="text-align: right;">${formatNumber(ledger.amount)}</td>
+                </tr>
+            `;
+        });
     });
+    
+    // Show ungrouped expenses
+    if (ungroupedExpenses > 0) {
+        reportHTML += `
+            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                <td>Other Expenses (Ungrouped)</td>
+                <td style="text-align: right;">${formatNumber(ungroupedExpenses)}</td>
+            </tr>
+        `;
+    }
+    
+    totalExpenses = groupedExpenseTotal + ungroupedExpenses;
     
     reportHTML += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
                     <td><strong>Total Expenses</strong></td>
-                    <td><strong>${totalExpenses.toFixed(2)}</strong></td>
+                    <td style="text-align: right;"><strong>${formatNumber(totalExpenses)}</strong></td>
                 </tr>
             </tfoot>
         </table>
-        
-        <div class="report-summary">
-            <div class="summary-item">
-                <div class="label">Net Profit/Loss</div>
-                <div class="value ${netProfit >= 0 ? 'positive' : 'negative'}">${netProfit.toFixed(2)}</div>
+    `;
+    
+    const netProfit = totalIncome - totalExpenses;
+    
+    reportHTML += `
+        <div class="report-summary" style="margin-top: 3rem;">
+            <div class="summary-item" style="background-color: ${netProfit >= 0 ? '#d4edda' : '#f8d7da'};">
+                <div class="label" style="font-size: 1.6rem;">Net Profit/Loss</div>
+                <div class="value ${netProfit >= 0 ? 'positive' : 'negative'}" style="font-size: 2.4rem; font-weight: bold;">
+                    ${formatNumber(Math.abs(netProfit))}
+                    <span style="font-size: 1.4rem; margin-left: 1rem;">${netProfit >= 0 ? 'Profit' : 'Loss'}</span>
+                </div>
             </div>
         </div>
     `;
     
     document.getElementById('report-content').innerHTML = reportHTML;
+}
+
+// Helper function to format numbers
+function formatNumber(num) {
+    if (num === undefined || num === null || isNaN(num)) return '-';
+    return Number(num).toFixed(2);
+}
+
+// Helper function to format dates
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    } catch (e) {
+        return dateString;
+    }
 }
 
 function loadBalanceSheet() {
@@ -387,7 +555,8 @@ function loadBalanceSheet() {
     let totalEquity = 0;
     
     filteredTransactions.forEach(t => {
-        const ledgerInfo = ledgers.find(l => l.name === t.ledger);
+        // Access ledgers from global scope
+        const ledgerInfo = window.ledgers ? window.ledgers.find(l => l.name === t.ledger) : null;
         if (!ledgerInfo) return;
         
         const balance = t.debit - t.credit;

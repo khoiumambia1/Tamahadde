@@ -319,18 +319,13 @@ section{
     border-top: var(--border);
     padding-top: 2rem;
 }
+
 /* accessibility styles */
 :focus-visible {
     outline: 2px solid var(--main-color);
     outline-offset: 2px;
 }
 
-/* media queries */
-@media(max-width:1200px){
-    html{
-        font-size: 55%;
-    }
-}
 /* media queries */
 @media(max-width:1200px){
     html{

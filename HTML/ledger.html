@@ -8,11 +8,77 @@
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Flatpickr Calendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+    
     <!-- custom css file link -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/accounting.css">
     <link rel="stylesheet" href="css/reports.css">
 
+    <style>
+        /* Calendar customization */
+        .flatpickr-calendar {
+            font-family: "Montserrat", sans-serif;
+            border-radius: 0.5rem;
+            box-shadow: var(--box-shadow);
+            border: var(--border);
+        }
+        
+        .flatpickr-day.selected {
+            background: var(--main-color);
+            border-color: var(--main-color);
+        }
+        
+        .flatpickr-day.selected:hover {
+            background: var(--secondary-color);
+        }
+        
+        .flatpickr-months .flatpickr-month {
+            background: var(--main-color);
+        }
+        
+        .date-picker {
+            background: white;
+            cursor: pointer;
+        }
+        
+        .date-picker:hover {
+            border-color: var(--main-color);
+        }
+        
+        /* Subgroup styles */
+        .subgroup-indicator {
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 1rem;
+            font-size: 1.1rem;
+            margin-left: 0.5rem;
+        }
+        
+        .report-table td.subgroup-cell {
+            position: relative;
+        }
+        
+        .report-table td.subgroup-cell::before {
+            content: "↳ ";
+            color: var(--secondary-color);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .subgroup-badge {
+            background: var(--bg-color);
+            color: var(--secondary-color);
+            padding: 0.3rem 0.8rem;
+            border-radius: 1rem;
+            font-size: 1.1rem;
+            border: 1px solid var(--secondary-color);
+        }
+    </style>
 </head>
 <body>
 
@@ -52,12 +118,12 @@
             <div class="report-controls">
                 <div class="date-range">
                     <div class="form-group">
-                        <label for="from-date">From Date:</label>
-                        <input type="text" id="from-date" class="date-picker" placeholder="Select date">
+                        <label for="from-date"><i class="fas fa-calendar-alt"></i> From Date:</label>
+                        <input type="text" id="from-date" class="date-picker" placeholder="Select from date" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="to-date">To Date:</label>
-                        <input type="text" id="to-date" class="date-picker" placeholder="Select date">
+                        <label for="to-date"><i class="fas fa-calendar-alt"></i> To Date:</label>
+                        <input type="text" id="to-date" class="date-picker" placeholder="Select to date" readonly>
                     </div>
                     <button class="btn" onclick="loadLedgerReport()"><i class="fas fa-search"></i> Load Report</button>
                 </div>
@@ -69,7 +135,7 @@
             </div>
 
             <div class="ledger-selector">
-                <label for="ledger-select">Select Ledger:</label>
+                <label for="ledger-select"><i class="fas fa-book"></i> Select Ledger:</label>
                 <select id="ledger-select" class="ledger-select" onchange="loadLedgerReport()">
                     <option value="">-- Select Ledger --</option>
                 </select>
@@ -104,6 +170,227 @@
     <script src="js/script.js"></script>
     <script src="js/accounting.js"></script>
     <script src="js/reports.js"></script>
-    
+
+    <script>
+        // Initialize date pickers
+        flatpickr("#from-date", {
+            dateFormat: "Y-m-d",
+            defaultDate: new Date().setMonth(new Date().getMonth() - 1),
+            allowInput: true,
+            altInput: true,
+            altFormat: "F j, Y",
+            maxDate: "today"
+        });
+
+        flatpickr("#to-date", {
+            dateFormat: "Y-m-d",
+            defaultDate: "today",
+            allowInput: true,
+            altInput: true,
+            altFormat: "F j, Y",
+            maxDate: "today"
+        });
+
+        // Load ledgers for selector
+        function loadLedgersForSelector() {
+            const ledgerSelect = document.getElementById('ledger-select');
+            if (!ledgerSelect) return;
+            
+            let options = '<option value="">-- Select Ledger --</option>';
+            
+            // Get all unique ledgers from transactions
+            const uniqueLedgers = [...new Set(transactions.map(t => t.ledger))];
+            
+            uniqueLedgers.sort().forEach(ledger => {
+                options += `<option value="${ledger}">${ledger}</option>`;
+            });
+            
+            ledgerSelect.innerHTML = options;
+        }
+
+        // Override ledger report to show subgroups
+        function loadLedgerReport() {
+            const fromDate = document.getElementById('from-date')?.value;
+            const toDate = document.getElementById('to-date')?.value;
+            const selectedLedger = document.getElementById('ledger-select')?.value;
+            
+            if (!selectedLedger) {
+                alert('Please select a ledger');
+                return;
+            }
+            
+            // Filter transactions for selected ledger and date range
+            let filteredTransactions = transactions.filter(t => t.ledger === selectedLedger);
+            
+            if (fromDate) {
+                filteredTransactions = filteredTransactions.filter(t => t.date >= fromDate);
+            }
+            if (toDate) {
+                filteredTransactions = filteredTransactions.filter(t => t.date <= toDate);
+            }
+            
+            if (filteredTransactions.length === 0) {
+                document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found for this period</div>';
+                return;
+            }
+            
+            // Sort by date
+            filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Calculate opening balance
+            let openingBalance = 0;
+            if (fromDate) {
+                const previousTransactions = transactions.filter(t => 
+                    t.ledger === selectedLedger && t.date < fromDate
+                );
+                previousTransactions.forEach(t => {
+                    openingBalance += (t.debit - t.credit);
+                });
+            }
+            
+            // Get subgroup labels
+            const customSubGroups = window.customSubGroups || [];
+            
+            // Generate report HTML with subgroup column
+            let reportHTML = `
+                <div class="report-header">
+                    <h2>${selectedLedger} Ledger</h2>
+                    <p>Period: ${fromDate || 'Start'} to ${toDate || 'Today'}</p>
+                </div>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Voucher</th>
+                            <th>Description</th>
+                            <th>Sub Group</th>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            let runningBalance = openingBalance;
+            let totalDebit = 0;
+            let totalCredit = 0;
+            
+            // Show opening balance row
+            if (fromDate) {
+                reportHTML += `
+                    <tr>
+                        <td colspan="4"><strong>Opening Balance</strong></td>
+                        <td></td>
+                        <td></td>
+                        <td><strong>${openingBalance.toFixed(2)}</strong></td>
+                    </tr>
+                `;
+            }
+            
+            filteredTransactions.forEach(t => {
+                runningBalance += (t.debit - t.credit);
+                totalDebit += t.debit;
+                totalCredit += t.credit;
+                
+                // Get subgroup display
+                let subgroupDisplay = '-';
+                if (t.subgroup && t.subgroup !== '') {
+                    const customSubGroup = customSubGroups.find(s => s.value === t.subgroup);
+                    subgroupDisplay = customSubGroup ? customSubGroup.label : t.subgroup;
+                }
+                
+                reportHTML += `
+                    <tr>
+                        <td>${t.date}</td>
+                        <td>${t.voucher}</td>
+                        <td>${t.narration || '-'}</td>
+                        <td>${subgroupDisplay !== '-' ? `<span class="subgroup-badge">${subgroupDisplay}</span>` : '-'}</td>
+                        <td>${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
+                        <td>${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
+                        <td>${runningBalance.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            reportHTML += `
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="4"><strong>Total</strong></td>
+                            <td><strong>${totalDebit.toFixed(2)}</strong></td>
+                            <td><strong>${totalCredit.toFixed(2)}</strong></td>
+                            <td><strong>${runningBalance.toFixed(2)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                
+                <div class="report-summary">
+                    <div class="summary-item">
+                        <div class="label">Opening Balance</div>
+                        <div class="value">${openingBalance.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">Total Debit</div>
+                        <div class="value">${totalDebit.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">Total Credit</div>
+                        <div class="value">${totalCredit.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">Closing Balance</div>
+                        <div class="value ${runningBalance >= 0 ? 'positive' : 'negative'}">${runningBalance.toFixed(2)}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('report-content').innerHTML = reportHTML;
+        }
+
+        // Load ledgers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof transactions !== 'undefined') {
+                loadLedgersForSelector();
+            }
+        });
+
+        // Export functions
+        function printReport() {
+            window.print();
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
+        function exportToExcel() {
+            const reportContent = document.getElementById('report-content').innerHTML;
+            const style = `
+                <style>
+                    table { border-collapse: collapse; width: 100%; }
+                    th { background: #3c40c6; color: white; padding: 10px; }
+                    td { padding: 8px; border: 1px solid #ddd; }
+                    .subgroup-badge { 
+                        background: #f4faff; 
+                        color: #009432; 
+                        padding: 3px 8px; 
+                        border-radius: 12px; 
+                        font-size: 11px;
+                        border: 1px solid #009432;
+                    }
+                    .total-row { background: #f4faff; font-weight: bold; }
+                </style>
+            `;
+            const fullHTML = `<html><head>${style}</head><body>${reportContent}</body></html>`;
+            const blob = new Blob([fullHTML], { type: 'application/vnd.ms-excel' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ledger-report.xls';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
 </body>
 </html>
