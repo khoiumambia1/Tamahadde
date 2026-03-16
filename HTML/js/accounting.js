@@ -1178,6 +1178,11 @@ function initSearchableSelects() {
 
 // Initialize bank searchable select
 function initBankSearchable(type) {
+    // Check if banks exists
+    if (typeof banks === 'undefined') {
+        console.log('Banks not loaded yet, skipping initialization');
+        return;
+    }
     const bankInput = document.getElementById(`${type}-bank-input`);
     const bankHidden = document.getElementById(`${type}-bank`);
     const bankList = document.getElementById(`${type}-bank-list`);
@@ -1340,21 +1345,8 @@ function updateLedgerDatalist(type) {
     const ledgerList = document.getElementById(`${type}-ledger-list`);
     if (!ledgerList) return;
     
-    // Get filtered ledgers based on transaction type
-    const paymentType = document.querySelector(`input[name="${type}-type"]:checked`)?.value;
-    let filteredLedgers = ledgers;
-    
-    if (paymentType === 'cash' || paymentType === 'bank') {
-        filteredLedgers = ledgers.filter(ledger => {
-            if (type === 'payment') {
-                return ledger.type === 'expense' || 
-                       (ledger.type === 'asset' && ledger.category === 'payable');
-            } else {
-                return ledger.type === 'income' || 
-                       (ledger.type === 'asset' && ledger.category === 'receivable');
-            }
-        });
-    }
+    // Remove the filter to show ALL ledgers
+    let filteredLedgers = ledgers;  // Show all ledgers
     
     let options = '';
     filteredLedgers.forEach(ledger => {
@@ -3180,98 +3172,154 @@ function closeModal() {
     }
 }
 
-function createNewLedger() {
-    const name = document.getElementById('modal-ledger-name').value.trim();
-    const type = document.getElementById('modal-ledger-type').value;
-    const group = document.getElementById('modal-ledger-group').value;
-    const entryType = document.getElementById('modal-entry-type').value;
-    const rowId = document.getElementById('modal-row-id').value;
-    
-    if(!name) {
-        alert('Please enter a ledger name');
-        document.getElementById('modal-ledger-name').focus();
-        return;
-    }
-    
-    if(ledgers.some(l => l.name.toLowerCase() === name.toLowerCase())) {
-        alert('Ledger already exists');
-        document.getElementById('modal-ledger-name').focus();
-        return;
-    }
-    
-    let category = type;
-    if (name.toLowerCase().includes('bank')) {
-        category = 'bank';
-    } else if (type === 'asset' && name.toLowerCase().includes('receivable')) {
-        category = 'receivable';
-    } else if (type === 'liability' && name.toLowerCase().includes('payable')) {
-        category = 'payable';
-    } else if (type === 'expense') {
-        category = 'expense';
-    } else if (type === 'income') {
-        category = 'income';
-    } else if (type === 'asset' && name.toLowerCase().includes('cash')) {
-        category = 'cash';
-    }
-    
-    const newLedger = {
-        id: ledgers.length + 1,
-        name: name.toLowerCase(),
-        type: type,
-        category: category,
-        group: group
-    };
-    
-    ledgers.push(newLedger);
-    localStorage.setItem('ledgers', JSON.stringify(ledgers));
-    updateAllLedgerDropdowns();
-    
-    if(entryType === 'payment' || entryType === 'receipt') {
-        document.getElementById(`${entryType}-ledger`).value = newLedger.id;
-        handleLedgerSelect(entryType);
-    } else if(entryType === 'journal' && rowId !== '') {
-        const rows = document.querySelectorAll('.journal-entry-row');
-        const targetRow = rows[parseInt(rowId)];
+    function createNewLedger() {
+        const name = document.getElementById('modal-ledger-name').value.trim();
+        const type = document.getElementById('modal-ledger-type').value;
+        const group = document.getElementById('modal-ledger-group').value;
+        const entryType = document.getElementById('modal-entry-type').value;
+        const rowId = document.getElementById('modal-row-id').value;
         
-        if(targetRow) {
-            const select = targetRow.querySelector('.journal-ledger-select');
-            const newLedgerBtn = targetRow.querySelector('.journal-new-ledger-btn');
-            const newLedgerGroup = targetRow.querySelector('.journal-new-ledger-input-group');
-            
-            if(select) {
-                select.value = newLedger.id;
-                select.style.display = 'block';
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            
-            if(newLedgerBtn) newLedgerBtn.style.display = 'block';
-            if(newLedgerGroup) newLedgerGroup.remove();
-            
-            validateJournalForSave();
+        if(!name) {
+            alert('Please enter a ledger name');
+            document.getElementById('modal-ledger-name').focus();
+            return;
         }
+        
+        // Make sure ledgers is defined
+        if (typeof ledgers === 'undefined') {
+            ledgers = window.ledgers || [];
+        }
+        
+        // Check if ledger already exists - with safety check
+        if (ledgers && Array.isArray(ledgers)) {
+            const exists = ledgers.some(l => 
+                l && l.name && typeof l.name === 'string' && 
+                l.name.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (exists) {
+                alert('Ledger already exists');
+                document.getElementById('modal-ledger-name').focus();
+                return;
+            }
+        }
+        
+        let category = type;
+        if (name.toLowerCase().includes('bank')) {
+            category = 'bank';
+        } else if (type === 'asset' && name.toLowerCase().includes('receivable')) {
+            category = 'receivable';
+        } else if (type === 'liability' && name.toLowerCase().includes('payable')) {
+            category = 'payable';
+        } else if (type === 'expense') {
+            category = 'expense';
+        } else if (type === 'income') {
+            category = 'income';
+        } else if (type === 'asset' && name.toLowerCase().includes('cash')) {
+            category = 'cash';
+        }
+        
+        // Make sure ledgers is an array before pushing
+        if (!ledgers) ledgers = [];
+        
+        const newLedger = {
+            id: ledgers.length + 1,
+            name: name.toLowerCase(),
+            type: type,
+            category: category,
+            group: group
+        };
+        
+        ledgers.push(newLedger);
+        localStorage.setItem('ledgers', JSON.stringify(ledgers));
+        updateAllLedgerDropdowns();
+        
+        if(entryType === 'payment' || entryType === 'receipt') {
+            const ledgerSelect = document.getElementById(`${entryType}-ledger`);
+            if (ledgerSelect) {
+                ledgerSelect.value = newLedger.id;
+                handleLedgerSelect(entryType);
+            }
+        } else if(entryType === 'journal' && rowId !== '') {
+            const rows = document.querySelectorAll('.journal-entry-row');
+            const targetRow = rows[parseInt(rowId)];
+            
+            if(targetRow) {
+                const select = targetRow.querySelector('.journal-ledger-select');
+                const newLedgerBtn = targetRow.querySelector('.journal-new-ledger-btn');
+                const newLedgerGroup = targetRow.querySelector('.journal-new-ledger-input-group');
+                
+                if(select) {
+                    select.value = newLedger.id;
+                    select.style.display = 'block';
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                
+                if(newLedgerBtn) newLedgerBtn.style.display = 'block';
+                if(newLedgerGroup) newLedgerGroup.remove();
+                
+                validateJournalForSave();
+            }
+        }
+        
+        closeModal();
     }
-    
-    closeModal();
-}
 
 // ==================== SAVE FUNCTIONS ====================
 
 function saveEntry(type) {
-    console.log('Saving entry:', type);
+    // Make sure banks is defined
+    if (typeof banks === 'undefined') {
+        banks = window.banks || [];
+    }
     
-    // Get basic form data
-    const date = document.getElementById(`${type}-date`).value;
-    const voucher = document.getElementById(`${type}-voucher`).value;
-    const paymentType = document.querySelector(`input[name="${type}-type"]:checked`).value;
-    const amount = parseFloat(document.getElementById(`${type}-amount`).value);
-    const narration = document.getElementById(`${type}-narration`).value;
+    // Make sure ledgers is defined
+    if (typeof ledgers === 'undefined') {
+        ledgers = window.ledgers || [];
+    }
+    console.log('========== SAVE ENTRY DEBUG ==========');
+    console.log('Saving entry type:', type);
     
-    // Get ledger from hidden field
+    // ===== CREATE YOUR VARIABLES HERE =====
+    const date = document.getElementById(`${type}-date`)?.value || '';
+    const voucher = document.getElementById(`${type}-voucher`)?.value || '';
+    const paymentType = document.querySelector(`input[name="${type}-type"]:checked`)?.value;
+    const amount = parseFloat(document.getElementById(`${type}-amount`)?.value) || 0;
+    const narration = document.getElementById(`${type}-narration`)?.value || '';
+    
+    // Log them
+    console.log('- date:', date);
+    console.log('- voucher:', voucher);
+    console.log('- paymentType:', paymentType);
+    console.log('- amount:', amount);
+    console.log('- narration:', narration);
+    
+    // Check bank elements if paymentType is bank
+    if (paymentType === 'bank') {
+        const bankHidden = document.getElementById(`${type}-bank`);
+        const bankInput = document.getElementById(`${type}-bank-input`);
+        const accountInput = document.getElementById(`${type}-account`);
+        console.log('- bank hidden:', bankHidden?.value);
+        console.log('- bank input:', bankInput?.value);
+        console.log('- account input:', accountInput?.value);
+    }
+    
     const ledgerHidden = document.getElementById(`${type}-ledger`);
+    const ledgerInput = document.getElementById(`${type}-ledger-input`);
+    console.log('- ledger hidden:', ledgerHidden?.value);
+    console.log('- ledger input:', ledgerInput?.value);
+    
+    const subgroupElement = document.getElementById(`${type}-subgroup`);
+    console.log('- subgroup element exists:', !!subgroupElement);
+    console.log('- subgroup value:', subgroupElement?.value);
+    console.log('======================================');
+
+    console.log('Saving entry:', type);
+
     let ledgerId = ledgerHidden ? ledgerHidden.value : '';
     
     // Get new ledger name if any
-    const newLedgerName = document.getElementById(`${type}-new-ledger`).value.trim();
+    const newLedgerName = document.getElementById(`${type}-new-ledger`)?.value.trim() || '';
     
     // Initialize variables for cash/bank ledger
     let cashBankLedgerId = null;
@@ -3288,6 +3336,7 @@ function saveEntry(type) {
         // If hidden field is empty, try to get from input
         if (!bankName) {
             const bankInput = document.getElementById(`${type}-bank-input`);
+            console.log('Bank input value:', bankInput?.value);
             if (bankInput && bankInput.value) {
                 // Try to find bank by input value (case insensitive)
                 const matchedBank = banks.find(b => 
@@ -3297,6 +3346,7 @@ function saveEntry(type) {
                 if (matchedBank) {
                     bankName = matchedBank.name;
                     if (bankHidden) bankHidden.value = matchedBank.name;
+                    console.log('Matched bank:', bankName);
                 }
             }
         }
@@ -3314,21 +3364,38 @@ function saveEntry(type) {
         
         console.log('Selected bank:', bankName);
         
-        // Find the bank ledger (case insensitive)
-        const bankLedger = ledgers.find(l => l.name.toLowerCase() === bankName.toLowerCase());
+        // Find the bank ledger (case insensitive) - FIXED WITH SAFETY CHECKS
+        let bankLedger = null;
+        if (ledgers && Array.isArray(ledgers) && ledgers.length > 0) {
+            try {
+                bankLedger = ledgers.find(l => 
+                    l && 
+                    l.name && 
+                    typeof l.name === 'string' && 
+                    l.name.toLowerCase() === bankName.toLowerCase()
+                );
+            } catch (e) {
+                console.warn('Error finding bank ledger:', e);
+            }
+        }
+        console.log('Bank ledger found:', bankLedger);
+        
         if (bankLedger) {
             cashBankLedgerId = bankLedger.id;
             cashBankLedgerName = bankLedger.name;
         } else {
+            console.log('Bank ledger not found, creating new one');
             // If bank ledger not found, create it
-            console.log('Bank ledger not found, creating:', bankName);
             const newBankLedger = {
-                id: ledgers.length + 1,
+                id: ledgers ? ledgers.length + 1 : 1,
                 name: bankName.toLowerCase(),
                 type: 'asset',
                 category: 'bank',
                 group: ''
             };
+            
+            // Make sure ledgers is an array
+            if (!ledgers) ledgers = [];
             ledgers.push(newBankLedger);
             localStorage.setItem('ledgers', JSON.stringify(ledgers));
             cashBankLedgerId = newBankLedger.id;
@@ -3338,24 +3405,26 @@ function saveEntry(type) {
         
         // Save account number to bank if provided
         if (accountNumber) {
-            const bankIndex = banks.findIndex(b => b.name.toLowerCase() === bankName.toLowerCase());
-            if (bankIndex !== -1) {
-                banks[bankIndex].accountNo = accountNumber;
-                localStorage.setItem('banks', JSON.stringify(banks));
-            } else {
-                // Add to banks array if not exists
-                const newBank = {
-                    id: banks.length + 1,
-                    name: bankName.toLowerCase(),
-                    displayName: bankName,
-                    accountNo: accountNumber
-                };
-                banks.push(newBank);
-                localStorage.setItem('banks', JSON.stringify(banks));
-                updateBankDropdowns();
+            if (banks && Array.isArray(banks)) {
+                const bankIndex = banks.findIndex(b => b.name.toLowerCase() === bankName.toLowerCase());
+                if (bankIndex !== -1) {
+                    banks[bankIndex].accountNo = accountNumber;
+                    localStorage.setItem('banks', JSON.stringify(banks));
+                } else {
+                    // Add to banks array if not exists
+                    const newBank = {
+                        id: banks.length + 1,
+                        name: bankName.toLowerCase(),
+                        displayName: bankName,
+                        accountNo: accountNumber
+                    };
+                    banks.push(newBank);
+                    localStorage.setItem('banks', JSON.stringify(banks));
+                    updateBankDropdowns();
+                }
             }
         }
-    } 
+    }
     // ========== HANDLE CASH SELECTION ==========
     else {
         // Find cash ledger (case insensitive)
@@ -3379,6 +3448,8 @@ function saveEntry(type) {
     // Try to get ledger ID from input if hidden is empty
     if (!ledgerId) {
         const ledgerInput = document.getElementById(`${type}-ledger-input`);
+        console.log('Ledger input value:', ledgerInput?.value);
+
         if (ledgerInput && ledgerInput.value) {
             const matchedLedger = ledgers.find(l => 
                 l.name.toLowerCase() === ledgerInput.value.toLowerCase()
@@ -3386,11 +3457,13 @@ function saveEntry(type) {
             if (matchedLedger) {
                 ledgerId = matchedLedger.id;
                 if (ledgerHidden) ledgerHidden.value = matchedLedger.id;
+                console.log('Matched ledger:', matchedLedger.name);
             }
         }
     }
     
     if (!ledgerId) {
+        console.log('No ledger ID found!');
         alert('Please select a ledger');
         const ledgerInput = document.getElementById(`${type}-ledger-input`);
         if (ledgerInput) ledgerInput.focus();
@@ -3462,9 +3535,9 @@ function saveEntry(type) {
     // ========== CREATE TRANSACTION DESCRIPTION ==========
     let transactionNarration = narration;
     if (paymentType === 'bank' && bankName) {
-        const bankDisplay = banks.find(b => b.name.toLowerCase() === bankName.toLowerCase())?.displayName || bankName;
+        // SIMPLE FIX: Use bank name directly without lookup
         const accountDisplay = accountNumber ? ` (A/C: ${accountNumber})` : '';
-        transactionNarration = narration || `${type === 'payment' ? 'Payment' : 'Receipt'} via ${bankDisplay}${accountDisplay}`;
+        transactionNarration = narration || `${type === 'payment' ? 'Payment' : 'Receipt'} via ${bankName}${accountDisplay}`;
     }
     
     // ========== CREATE DOUBLE-ENTRY TRANSACTIONS ==========
@@ -3476,7 +3549,7 @@ function saveEntry(type) {
         console.log('Creating PAYMENT entries:');
         console.log(`- Credit: ${cashBankLedgerName} (Cash/Bank) - ${amount}`);
         console.log(`- Debit: ${otherLedger.name} (Other Ledger) - ${amount}`);
-        
+
         // Entry 1: Credit Cash/Bank (decreases)
         transactions_to_add.push({
             id: baseId,
@@ -3490,11 +3563,18 @@ function saveEntry(type) {
             amount: amount,
             debit: 0,
             credit: amount,
+            subgroup: '',
             narration: transactionNarration || `Payment made - ${otherLedger.name}`,
             entry_type: type
         });
         
-        // Entry 2: Debit Other ledger (increases expense/asset)
+        // Entry 2: Debit Other ledger
+        let subgroupValue = '';
+        const subgroupElement = document.getElementById(`${type}-subgroup`);
+        if (subgroupElement) {
+            subgroupValue = subgroupElement.value || '';
+        }
+        
         transactions_to_add.push({
             id: baseId + 1,
             date: date,
@@ -3507,6 +3587,7 @@ function saveEntry(type) {
             amount: amount,
             debit: amount,
             credit: 0,
+            subgroup: subgroupValue,
             narration: transactionNarration || `Payment made - ${cashBankLedgerName}`,
             entry_type: type
         });
@@ -3530,9 +3611,16 @@ function saveEntry(type) {
             amount: amount,
             debit: amount,
             credit: 0,
+            subgroup: '',
             narration: transactionNarration || `Receipt received - ${otherLedger.name}`,
             entry_type: type
         });
+        
+        let subgroupValue = '';
+        const subgroupElement = document.getElementById(`${type}-subgroup`);
+        if (subgroupElement) {
+            subgroupValue = subgroupElement.value || '';
+        }
         
         // Entry 2: Credit Other ledger (increases income/liability)
         transactions_to_add.push({
@@ -3547,6 +3635,7 @@ function saveEntry(type) {
             amount: amount,
             debit: 0,
             credit: amount,
+            subgroup: subgroupValue,
             narration: transactionNarration || `Receipt received - ${cashBankLedgerName}`,
             entry_type: type
         });
@@ -3750,7 +3839,7 @@ function saveJournal() {
                     ledger: ledger.name, 
                     debit: debit, 
                     credit: credit,
-                    subgroup: subgroupValue
+                    subgroup: subgroupHidden?.value || '' // ← ADD THIS LINE
                 });
                 totalDebit += debit;
                 totalCredit += credit;
