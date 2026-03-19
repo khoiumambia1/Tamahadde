@@ -8,11 +8,46 @@
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Flatpickr Calendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
+    
     <!-- custom css file link -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/accounting.css">
     <link rel="stylesheet" href="css/reports.css">
 
+    <style>
+        /* Calendar customization */
+        .flatpickr-calendar {
+            font-family: "Montserrat", sans-serif;
+            border-radius: 0.5rem;
+            box-shadow: var(--box-shadow);
+            border: var(--border);
+        }
+        
+        .flatpickr-day.selected {
+            background: var(--main-color);
+            border-color: var(--main-color);
+        }
+        
+        .flatpickr-day.selected:hover {
+            background: var(--secondary-color);
+        }
+        
+        .flatpickr-months .flatpickr-month {
+            background: var(--main-color);
+        }
+        
+        .date-picker {
+            background: white;
+            cursor: pointer;
+        }
+        
+        .date-picker:hover {
+            border-color: var(--main-color);
+        }
+    </style>
 </head>
 <body>
 
@@ -53,7 +88,7 @@
                 <div class="date-range">
                     <div class="form-group">
                         <label for="as-of-date">As of Date:</label>
-                        <input type="text" id="as-of-date" class="date-picker" placeholder="Select date">
+                        <input type="text" id="as-of-date" class="date-picker" placeholder="Select date" readonly>
                     </div>
                     <button class="btn" onclick="loadBalanceSheet()"><i class="fas fa-search"></i> Load Report</button>
                 </div>
@@ -92,7 +127,66 @@
     <!-- custom js file link -->
     <script src="js/script.js"></script>
     <script src="js/accounting.js"></script>
+    <script src="js/utils.js"></script>
     <script src="js/reports.js"></script>
     
+    <script>
+        // Initialize date picker
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr("#as-of-date", {
+                    dateFormat: "Y-m-d",
+                    defaultDate: "today",
+                    allowInput: true,
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    theme: "material_blue",
+                    maxDate: "today"
+                });
+            }
+        });
+
+        // Export functions
+        function printReport() {
+            window.print();
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
+        function exportToExcel() {
+            const reportContent = document.getElementById('report-content').innerHTML;
+            const style = `
+                <style>
+                    table { border-collapse: collapse; width: 100%; }
+                    th { background: #3c40c6; color: white; padding: 10px; }
+                    td { padding: 8px; border: 1px solid #ddd; }
+                    .total-row { background: #f4faff; font-weight: bold; }
+                    .positive { color: #28a745; }
+                    .negative { color: #dc3545; }
+                </style>
+            `;
+            const fullHTML = `<html><head>${style}</head><body>${reportContent}</body></html>`;
+            const blob = new Blob([fullHTML], { type: 'application/vnd.ms-excel' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'balance-sheet.xls';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+    
+    <!-- Safety checks -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof transactions === 'undefined') window.transactions = [];
+        if (typeof ledgers === 'undefined') window.ledgers = [];
+        if (typeof banks === 'undefined') window.banks = [];
+        if (typeof customSubGroups === 'undefined') window.customSubGroups = [];
+        console.log('Safety checks completed');
+    });
+    </script>
 </body>
 </html>

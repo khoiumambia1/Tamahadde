@@ -12,13 +12,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
     
-    <!-- custom css file link -->
+    <!-- Custom CSS files -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/accounting.css">
     <link rel="stylesheet" href="css/reports.css">
 
     <style>
-        /* Calendar customization */
         .flatpickr-calendar {
             font-family: "Montserrat", sans-serif;
             border-radius: 0.5rem;
@@ -43,25 +42,27 @@
             border-color: var(--main-color);
         }
         
-        /* Report table styles */
+        /* Report table styling to match balance sheet */
         .report-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 2rem;
             font-size: 1.4rem;
+            box-shadow: var(--box-shadow);
         }
         .report-table th {
             background: var(--main-color);
             color: white;
             padding: 1.2rem;
             text-align: left;
+            font-weight: 600;
         }
         .report-table td {
             padding: 1rem;
             border-bottom: 1px solid #eee;
+            color: var(--black);
         }
         
-        /* Group header styles */
         .group-header {
             background-color: #f0f0f0;
             font-weight: bold;
@@ -70,67 +71,60 @@
             color: var(--main-color);
             border-top: 2px solid var(--main-color);
             border-bottom: 2px solid var(--main-color);
-            font-size: 1.5rem;
+            font-size: 1.6rem;
         }
         
-        /* Subgroup row styles */
-        .subgroup-row {
-            background-color: #f9f9f9;
-        }
-        .subgroup-row td {
-            color: var(--secondary-color);
-            font-style: italic;
-            padding-left: 3rem !important;
-        }
-        .subgroup-row td:first-child::before {
-            content: "↳ ";
-            color: var(--main-color);
-            font-weight: bold;
-            margin-right: 0.5rem;
-        }
-        
-        /* Ledger row styles */
         .ledger-row td:first-child {
-            padding-left: 5rem !important;
+            padding-left: 4rem !important;
         }
         .ledger-row td:first-child::before {
             content: "↳ ";
-            color: #999;
+            color: var(--secondary-color);
+            font-weight: bold;
             margin-right: 0.5rem;
         }
         .ledger-row:hover {
             background-color: #f5f5f5;
         }
         
-        /* Total row styles */
         .total-row {
-            background-color: var(--bg-color);
+            background-color: #e8e8e8;
             font-weight: bold;
         }
         .total-row td {
             border-top: 2px solid var(--main-color);
+            border-bottom: 2px solid var(--main-color);
         }
         
-        /* Summary cards */
+        .grand-total-row {
+            background: linear-gradient(135deg, var(--main-color), var(--secondary-color));
+            color: white;
+            font-weight: bold;
+        }
+        .grand-total-row td {
+            color: white;
+            border: none;
+        }
+        
         .report-summary {
             margin-top: 3rem;
-            padding: 2rem;
-            background: linear-gradient(135deg, var(--main-color), var(--secondary-color));
-            border-radius: 1rem;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 2rem;
-            color: white;
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 1rem;
         }
         .summary-item {
             text-align: center;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            background: white;
             border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .summary-item .label {
             font-size: 1.4rem;
-            opacity: 0.9;
+            color: #666;
             margin-bottom: 0.5rem;
         }
         .summary-item .value {
@@ -138,10 +132,18 @@
             font-weight: bold;
         }
         .summary-item .value.positive {
-            color: #a5d6a5;
+            color: #28a745;
         }
         .summary-item .value.negative {
-            color: #ffb3b3;
+            color: #dc3545;
+        }
+        
+        .section-title {
+            margin-top: 2rem;
+            color: var(--main-color);
+            font-size: 2rem;
+            border-bottom: 2px solid var(--main-color);
+            padding-bottom: 0.5rem;
         }
         
         .loading {
@@ -150,16 +152,37 @@
             color: var(--light-color);
             font-size: 1.8rem;
         }
-        h3 {
-            font-size: 2rem;
-            color: var(--black);
-            margin: 2rem 0 1rem;
+
+        .alert-success {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: .5rem;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-warning {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: .5rem;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
     </style>
 </head>
 <body>
     <header class="header">
-        <section class="flex">
+        <div class="flex">
             <a href="index.html" class="logo"><i class="fas fa-calculator"></i> Khoium's Accounting</a>
             <nav class="navbar">
                 <ul>
@@ -178,7 +201,7 @@
                 </ul>
             </nav>
             <div id="menu-btn" class="fas fa-bars-staggered"></div>
-        </section>
+        </div>
     </header>
 
     <main>
@@ -186,14 +209,10 @@
             <h1 class="heading">profit & <span>loss</span></h1>
             
             <div class="report-controls">
-                <div class="date-range">
+                <div class="date-range" style="display: flex; align-items: flex-end; gap: 2rem;">
                     <div class="form-group">
-                        <label for="from-date"><i class="fas fa-calendar-alt"></i> From Date:</label>
-                        <input type="text" id="from-date" class="date-picker" placeholder="Select from date" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="to-date"><i class="fas fa-calendar-alt"></i> To Date:</label>
-                        <input type="text" id="to-date" class="date-picker" placeholder="Select to date" readonly>
+                        <label for="as-of-date"><i class="fas fa-calendar-alt"></i> As of Date:</label>
+                        <input type="text" id="as-of-date" class="date-picker" placeholder="Select date" readonly>
                     </div>
                     <button class="btn" onclick="loadProfitLoss()"><i class="fas fa-search"></i> Load Report</button>
                 </div>
@@ -205,13 +224,13 @@
             </div>
 
             <div id="report-content" class="report-content">
-                <div class="loading">Select date range to view profit & loss</div>
+                <div class="loading">Select as-of date to view profit & loss</div>
             </div>
         </section>
     </main>
 
     <footer class="footer">
-        <section>
+        <div>
             <div class="share">
                 <a href="#" class="fab fa-facebook-f"></a>
                 <a href="#" class="fab fa-twitter"></a>
@@ -220,25 +239,18 @@
                 <a href="#" class="fab fa-youtube"></a>
             </div>
             <div class="credit">&copy; 2026 Khoium's Accounting. All rights reserved.</div>
-        </section>
+        </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="js/script.js"></script>
     <script src="js/accounting.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/reports.js"></script>
 
     <script>
-        // Initialize date pickers
-        flatpickr("#from-date", {
-            dateFormat: "Y-m-d",
-            defaultDate: new Date().setMonth(new Date().getMonth() - 1),
-            allowInput: true,
-            altInput: true,
-            altFormat: "F j, Y",
-            maxDate: "today"
-        });
-
-        flatpickr("#to-date", {
+        // Initialize date picker
+        flatpickr("#as-of-date", {
             dateFormat: "Y-m-d",
             defaultDate: "today",
             allowInput: true,
@@ -247,389 +259,11 @@
             maxDate: "today"
         });
 
-        // Main P&L function - DEFINED IN GLOBAL SCOPE
-        window.loadProfitLoss = function() {
-            const fromDate = document.getElementById('from-date')?.value;
-            const toDate = document.getElementById('to-date')?.value;
-            
-            if (!fromDate || !toDate) {
-                alert('Please select from and to dates');
-                return;
-            }
-            
-            // Get data from global variables
-            const allTransactions = window.transactions || [];
-            const allLedgers = window.ledgers || [];
-            const allSubGroups = window.customSubGroups || [];
-            
-            // Filter transactions for date range
-            const filteredTransactions = allTransactions.filter(t => 
-                t.date >= fromDate && t.date <= toDate
-            );
-            
-            if (filteredTransactions.length === 0) {
-                document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found for this period</div>';
-                return;
-            }
-            
-            // P&L Groups definition
-            const pnlGroups = {
-                income: [
-                    { value: 'operating_revenue', label: 'Operating Revenue' },
-                    { value: 'other_income', label: 'Other Income' },
-                    { value: 'interest_income', label: 'Interest Income' },
-                    { value: 'commission', label: 'Commission' }
-                ],
-                expense: [
-                    { value: 'operating_expenses', label: 'Operating Expenses' },
-                    { value: 'administrative', label: 'Administrative Expenses' },
-                    { value: 'selling_distribution', label: 'Selling & Distribution' },
-                    { value: 'financial_charges', label: 'Financial Charges' },
-                    { value: 'depreciation', label: 'Depreciation' },
-                    { value: 'staff_cost', label: 'Staff Cost' },
-                    { value: 'rent_utilities', label: 'Rent & Utilities' },
-                    { value: 'marketing', label: 'Marketing & Advertising' },
-                    { value: 'travel_conveyance', label: 'Travel & Conveyance' },
-                    { value: 'office_expenses', label: 'Office Expenses' },
-                    { value: 'professional_fees', label: 'Professional Fees' },
-                    { value: 'repairs_maintenance', label: 'Repairs & Maintenance' },
-                    { value: 'insurance', label: 'Insurance' },
-                    { value: 'taxes', label: 'Taxes' },
-                    { value: 'miscellaneous', label: 'Miscellaneous' }
-                ]
-            };
-            
-            // Data structures
-            const incomeByGroup = {};
-            const expenseByGroup = {};
-            let ungroupedIncome = 0;
-            let ungroupedExpenses = 0;
-            
-            // Process each transaction
-            filteredTransactions.forEach(t => {
-                const ledgerInfo = allLedgers.find(l => l.name === t.ledger);
-                if (!ledgerInfo) return;
-                
-                const isIncome = (ledgerInfo.type === 'income' || t.type === 'receipt');
-                const isExpense = (ledgerInfo.type === 'expense' || t.type === 'payment');
-                
-                if (isIncome) {
-                    const amount = parseFloat(t.credit || t.debit || 0);
-                    
-                    // Check if ledger has a P&L group
-                    if (ledgerInfo.group && ledgerInfo.group !== '') {
-                        // Initialize group
-                        if (!incomeByGroup[ledgerInfo.group]) {
-                            const groupLabel = pnlGroups.income.find(g => g.value === ledgerInfo.group)?.label || ledgerInfo.group;
-                            incomeByGroup[ledgerInfo.group] = {
-                                label: groupLabel,
-                                total: 0,
-                                subgroups: {},
-                                ledgers: []
-                            };
-                        }
-                        
-                        // Handle subgroup
-                        if (t.subgroup && t.subgroup !== '') {
-                            // Find subgroup label
-                            const customSubGroup = allSubGroups.find(s => s.value === t.subgroup);
-                            const subgroupLabel = customSubGroup ? customSubGroup.label : t.subgroup;
-                            
-                            if (!incomeByGroup[ledgerInfo.group].subgroups[t.subgroup]) {
-                                incomeByGroup[ledgerInfo.group].subgroups[t.subgroup] = {
-                                    label: subgroupLabel,
-                                    total: 0,
-                                    ledgers: []
-                                };
-                            }
-                            
-                            incomeByGroup[ledgerInfo.group].subgroups[t.subgroup].total += amount;
-                            incomeByGroup[ledgerInfo.group].subgroups[t.subgroup].ledgers.push({
-                                name: ledgerInfo.name,
-                                amount: amount
-                            });
-                        } else {
-                            // Add to ledgers array without subgroup
-                            incomeByGroup[ledgerInfo.group].ledgers.push({
-                                name: ledgerInfo.name,
-                                amount: amount,
-                                subgroup: ''
-                            });
-                        }
-                        
-                        incomeByGroup[ledgerInfo.group].total += amount;
-                    } else {
-                        ungroupedIncome += amount;
-                    }
-                } else if (isExpense) {
-                    const amount = parseFloat(t.debit || t.credit || 0);
-                    
-                    // Check if ledger has a P&L group
-                    if (ledgerInfo.group && ledgerInfo.group !== '') {
-                        // Initialize group
-                        if (!expenseByGroup[ledgerInfo.group]) {
-                            const groupLabel = pnlGroups.expense.find(g => g.value === ledgerInfo.group)?.label || ledgerInfo.group;
-                            expenseByGroup[ledgerInfo.group] = {
-                                label: groupLabel,
-                                total: 0,
-                                subgroups: {},
-                                ledgers: []
-                            };
-                        }
-                        
-                        // Handle subgroup
-                        if (t.subgroup && t.subgroup !== '') {
-                            // Find subgroup label
-                            const customSubGroup = allSubGroups.find(s => s.value === t.subgroup);
-                            const subgroupLabel = customSubGroup ? customSubGroup.label : t.subgroup;
-                            
-                            if (!expenseByGroup[ledgerInfo.group].subgroups[t.subgroup]) {
-                                expenseByGroup[ledgerInfo.group].subgroups[t.subgroup] = {
-                                    label: subgroupLabel,
-                                    total: 0,
-                                    ledgers: []
-                                };
-                            }
-                            
-                            expenseByGroup[ledgerInfo.group].subgroups[t.subgroup].total += amount;
-                            expenseByGroup[ledgerInfo.group].subgroups[t.subgroup].ledgers.push({
-                                name: ledgerInfo.name,
-                                amount: amount
-                            });
-                        } else {
-                            // Add to ledgers array without subgroup
-                            expenseByGroup[ledgerInfo.group].ledgers.push({
-                                name: ledgerInfo.name,
-                                amount: amount,
-                                subgroup: ''
-                            });
-                        }
-                        
-                        expenseByGroup[ledgerInfo.group].total += amount;
-                    } else {
-                        ungroupedExpenses += amount;
-                    }
-                }
-            });
-            
-            // Calculate totals
-            let totalIncome = ungroupedIncome;
-            let totalExpenses = ungroupedExpenses;
-            
-            // Build HTML
-            let html = `
-                <div class="report-header">
-                    <h2>Profit & Loss Statement</h2>
-                    <p>Period: ${formatDate(fromDate)} to ${formatDate(toDate)}</p>
-                </div>
-            `;
-            
-            // INCOME SECTION
-            html += `<h3>Income</h3>`;
-            html += `<table class="report-table">`;
-            html += `<thead><tr><th width="70%">Particulars</th><th width="30%">Amount</th></tr></thead>`;
-            html += `<tbody>`;
-            
-            // Sort income groups
-            const sortedIncomeGroups = Object.keys(incomeByGroup).sort();
-            
-            if (sortedIncomeGroups.length > 0) {
-                sortedIncomeGroups.forEach(groupKey => {
-                    const group = incomeByGroup[groupKey];
-                    
-                    // Add to total income
-                    totalIncome += group.total;
-                    
-                    // Group header
-                    html += `<tr class="group-header">`;
-                    html += `<td><strong>${group.label}</strong></td>`;
-                    html += `<td><strong>${formatNumber(group.total)}</strong></td>`;
-                    html += `</tr>`;
-                    
-                    // Check if there are subgroups
-                    const subgroupKeys = Object.keys(group.subgroups);
-                    
-                    if (subgroupKeys.length > 0) {
-                        // Show subgroups first
-                        subgroupKeys.sort().forEach(subKey => {
-                            const subgroup = group.subgroups[subKey];
-                            
-                            // Subgroup row
-                            html += `<tr class="subgroup-row">`;
-                            html += `<td>${subgroup.label}</td>`;
-                            html += `<td>${formatNumber(subgroup.total)}</td>`;
-                            html += `</tr>`;
-                            
-                            // Ledgers in this subgroup
-                            subgroup.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-                                html += `<tr class="ledger-row">`;
-                                html += `<td>${ledger.name}</td>`;
-                                html += `<td>${formatNumber(ledger.amount)}</td>`;
-                                html += `</tr>`;
-                            });
-                        });
-                        
-                        // Show any ledgers not in subgroups
-                        const ledgersWithoutSubgroup = group.ledgers.filter(l => !l.subgroup || l.subgroup === '');
-                        ledgersWithoutSubgroup.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-                            html += `<tr class="ledger-row">`;
-                            html += `<td>${ledger.name}</td>`;
-                            html += `<td>${formatNumber(ledger.amount)}</td>`;
-                            html += `</tr>`;
-                        });
-                    } else {
-                        // No subgroups, show ledgers directly
-                        group.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-                            html += `<tr class="ledger-row">`;
-                            html += `<td>${ledger.name}</td>`;
-                            html += `<td>${formatNumber(ledger.amount)}</td>`;
-                            html += `</tr>`;
-                        });
-                    }
-                });
-            }
-            
-            // Add ungrouped income
-            if (ungroupedIncome > 0) {
-                html += `<tr class="group-header">`;
-                html += `<td><strong>Other Income (Ungrouped)</strong></td>`;
-                html += `<td><strong>${formatNumber(ungroupedIncome)}</strong></td>`;
-                html += `</tr>`;
-            }
-            
-            html += `</tbody>`;
-            html += `<tfoot><tr class="total-row">`;
-            html += `<td><strong>Total Income</strong></td>`;
-            html += `<td><strong>${formatNumber(totalIncome)}</strong></td>`;
-            html += `</tr></tfoot>`;
-            html += `</table>`;
-            
-            // EXPENSE SECTION
-            html += `<h3 style="margin-top: 2rem;">Expenses</h3>`;
-            html += `<table class="report-table">`;
-            html += `<thead><tr><th width="70%">Particulars</th><th width="30%">Amount</th></tr></thead>`;
-            html += `<tbody>`;
-            
-            // Sort expense groups
-            const sortedExpenseGroups = Object.keys(expenseByGroup).sort();
-            
-            if (sortedExpenseGroups.length > 0) {
-                sortedExpenseGroups.forEach(groupKey => {
-                    const group = expenseByGroup[groupKey];
-                    
-                    // Add to total expenses
-                    totalExpenses += group.total;
-                    
-                    // Group header
-                    html += `<tr class="group-header">`;
-                    html += `<td><strong>${group.label}</strong></td>`;
-                    html += `<td><strong>${formatNumber(group.total)}</strong></td>`;
-                    html += `</tr>`;
-                    
-                    // Check if there are subgroups
-                    const subgroupKeys = Object.keys(group.subgroups);
-                    
-                    if (subgroupKeys.length > 0) {
-                        // Show subgroups first
-                        subgroupKeys.sort().forEach(subKey => {
-                            const subgroup = group.subgroups[subKey];
-                            
-                            // Subgroup row
-                            html += `<tr class="subgroup-row">`;
-                            html += `<td>${subgroup.label}</td>`;
-                            html += `<td>${formatNumber(subgroup.total)}</td>`;
-                            html += `</tr>`;
-                            
-                            // Ledgers in this subgroup
-                            subgroup.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-                                html += `<tr class="ledger-row">`;
-                                html += `<td>${ledger.name}</td>`;
-                                html += `<td>${formatNumber(ledger.amount)}</td>`;
-                                html += `</tr>`;
-                            });
-                        });
-                        
-                        // Show any ledgers not in subgroups
-                        const ledgersWithoutSubgroup = group.ledgers.filter(l => !l.subgroup || l.subgroup === '');
-                        ledgersWithoutSubgroup.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-                            html += `<tr class="ledger-row">`;
-                            html += `<td>${ledger.name}</td>`;
-                            html += `<td>${formatNumber(ledger.amount)}</td>`;
-                            html += `</tr>`;
-                        });
-                    } else {
-                        // No subgroups, show ledgers directly
-                        group.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-                            html += `<tr class="ledger-row">`;
-                            html += `<td>${ledger.name}</td>`;
-                            html += `<td>${formatNumber(ledger.amount)}</td>`;
-                            html += `</tr>`;
-                        });
-                    }
-                });
-            }
-            
-            // Add ungrouped expenses
-            if (ungroupedExpenses > 0) {
-                html += `<tr class="group-header">`;
-                html += `<td><strong>Other Expenses (Ungrouped)</strong></td>`;
-                html += `<td><strong>${formatNumber(ungroupedExpenses)}</strong></td>`;
-                html += `</tr>`;
-            }
-            
-            html += `</tbody>`;
-            html += `<tfoot><tr class="total-row">`;
-            html += `<td><strong>Total Expenses</strong></td>`;
-            html += `<td><strong>${formatNumber(totalExpenses)}</strong></td>`;
-            html += `</tr></tfoot>`;
-            html += `</table>`;
-            
-            // Net Profit/Loss
-            const netProfit = totalIncome - totalExpenses;
-            
-            html += `
-                <div class="report-summary">
-                    <div class="summary-item">
-                        <div class="label">Net Profit/Loss</div>
-                        <div class="value ${netProfit >= 0 ? 'positive' : 'negative'}">${formatNumber(Math.abs(netProfit))} <span style="font-size: 1.4rem;">${netProfit >= 0 ? 'Profit' : 'Loss'}</span></div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('report-content').innerHTML = html;
-        };
-
-        // Helper function to format numbers
-        function formatNumber(num) {
-            if (num === undefined || num === null || isNaN(num)) return '0.00';
-            return Number(num).toFixed(2);
-        }
-
-        // Helper function to format dates
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            try {
-                const date = new Date(dateString);
-                if (isNaN(date.getTime())) return dateString;
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-            } catch (e) {
-                return dateString;
-            }
-        }
-
-        // Utility functions
-        window.printReport = function() { 
-            window.print(); 
-        };
-
-        window.exportToPDF = function() { 
-            window.print(); 
-        };
-
-        window.exportToExcel = function() {
+        // Export functions
+        function printReport() { window.print(); }
+        function exportToPDF() { window.print(); }
+        
+        function exportToExcel() {
             const content = document.getElementById('report-content').innerHTML;
             const style = `
                 <style>
@@ -637,8 +271,11 @@
                     th { background: #3c40c6; color: white; padding: 10px; }
                     td { padding: 8px; border: 1px solid #ddd; }
                     .group-header { background: #f0f0f0; font-weight: bold; }
-                    .subgroup-row { background: #f9f9f9; font-style: italic; }
-                    .total-row { background: #f4faff; font-weight: bold; }
+                    .ledger-row td:first-child { padding-left: 30px; }
+                    .total-row { background: #e8e8e8; font-weight: bold; }
+                    .grand-total-row { background: linear-gradient(135deg, #3c40c6, #009432); color: white; }
+                    .positive { color: #28a745; }
+                    .negative { color: #dc3545; }
                 </style>
             `;
             const fullHTML = `<html><head>${style}</head><body>${content}</body></html>`;
@@ -649,7 +286,16 @@
             a.download = 'profit-loss.xls';
             a.click();
             window.URL.revokeObjectURL(url);
-        };
+        }
+
+        // Safety checks
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof transactions === 'undefined') window.transactions = [];
+            if (typeof ledgers === 'undefined') window.ledgers = [];
+            if (typeof banks === 'undefined') window.banks = [];
+            if (typeof customSubGroups === 'undefined') window.customSubGroups = [];
+            console.log('Safety checks completed');
+        });
     </script>
 </body>
 </html>

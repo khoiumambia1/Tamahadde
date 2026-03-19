@@ -1495,3 +1495,30 @@ datalist {
         width: 100%;
     }
 }
+/* Journal entry row with 5 columns: Ledger | Subgroup | Debit | Credit | Remove */
+.journal-entry-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr auto;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-color);
+    border-radius: .5rem;
+    position: relative;
+    align-items: end;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .journal-entry-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .journal-entry-row .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .remove-row-btn {
+        width: 100%;
+    }
+}

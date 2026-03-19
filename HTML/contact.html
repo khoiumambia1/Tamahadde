@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Khoium's Accounting</title>
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- custom css file link -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/accounting.css">
+
+    <style>
+        .contact-section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 3rem auto;
+        }
+        
+        .contact-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .contact-header h1 {
+            font-size: 4rem;
+            color: var(--black);
+            margin-bottom: 1rem;
+        }
+        
+        .contact-header h1 span {
+            color: var(--main-color);
+        }
+        
+        .contact-header p {
+            font-size: 1.8rem;
+            color: var(--light-color);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4rem;
+            margin: 4rem 0;
+        }
+        
+        .contact-info {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .contact-info h2 {
+            font-size: 2.5rem;
+            color: var(--black);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .contact-info h2 i {
+            color: var(--main-color);
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .info-item i {
+            font-size: 2.5rem;
+            color: var(--main-color);
+            width: 3rem;
+        }
+        
+        .info-item .details h3 {
+            font-size: 1.8rem;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-item .details p {
+            font-size: 1.5rem;
+            color: var(--light-color);
+            line-height: 1.6;
+        }
+        
+        .map-container {
+            margin-top: 2rem;
+            border-radius: 1rem;
+            overflow: hidden;
+            height: 250px;
+        }
+        
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        
+        .contact-form {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .contact-form h2 {
+            font-size: 2.5rem;
+            color: var(--black);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .contact-form h2 i {
+            color: var(--main-color);
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 1.6rem;
+            color: var(--black);
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .form-group label i {
+            color: var(--main-color);
+            margin-right: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 1.2rem;
+            font-size: 1.6rem;
+            border: var(--border);
+            border-radius: 0.5rem;
+            background: var(--bg-color);
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--main-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(60, 64, 198, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .submit-btn {
+            background: var(--main-color);
+            color: var(--white);
+            padding: 1.5rem 3rem;
+            font-size: 1.8rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .submit-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .submit-btn i {
+            font-size: 1.8rem;
+        }
+        
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 1.6rem;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .faq-section {
+            margin-top: 5rem;
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .faq-section h2 {
+            font-size: 2.5rem;
+            color: var(--black);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .faq-section h2 span {
+            color: var(--main-color);
+        }
+        
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .faq-item {
+            padding: 2rem;
+            background: var(--bg-color);
+            border-radius: 0.5rem;
+        }
+        
+        .faq-item h3 {
+            font-size: 1.8rem;
+            color: var(--main-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .faq-item p {
+            font-size: 1.4rem;
+            color: var(--light-color);
+            line-height: 1.6;
+        }
+        
+        .business-hours {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: var(--bg-color);
+            border-radius: 0.5rem;
+        }
+        
+        .business-hours h3 {
+            font-size: 1.8rem;
+            color: var(--black);
+            margin-bottom: 1rem;
+        }
+        
+        .business-hours ul {
+            list-style: none;
+        }
+        
+        .business-hours li {
+            font-size: 1.5rem;
+            color: var(--light-color);
+            padding: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #ddd;
+        }
+        
+        .business-hours li span {
+            font-weight: bold;
+            color: var(--main-color);
+        }
+        
+        @media (max-width: 768px) {
+            .contact-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .contact-header h1 {
+                font-size: 3rem;
+            }
+            
+            .contact-info,
+            .contact-form {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- header section starts -->
+    <header class="header">
+        <section class="flex">
+            <a href="index.html" class="logo"> <i class="fas fa-calculator"></i> Khoium's Accounting</a>
+
+            <nav class="navbar">
+                <ul>
+                    <li><a href="index.html">home</a></li>
+                    <li><a href="about.html">about</a></li>
+                    <li><a href="index.html#payment">accounting</a></li>
+                    <li><a href="#">reports <i class="fas fa-angle-down"></i></a>
+                        <ul>
+                            <li><a href="ledger.html">ledger</a></li>
+                            <li><a href="trial-balance.html">trial balance</a></li>
+                            <li><a href="profit-loss.html">profit & loss</a></li>
+                            <li><a href="balance-sheet.html">balance sheet</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="contact.html" class="active">contact</a></li>
+                </ul>
+            </nav>
+
+            <div id="menu-btn" class="fas fa-bars-staggered"></div>
+
+        </section>
+    </header>
+    <!-- header section ends -->
+
+    <!-- contact section starts -->
+    <section class="contact-section">
+        <div class="contact-header">
+            <h1>contact <span>us</span></h1>
+            <p>Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+        </div>
+        
+        <div class="contact-grid">
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <h2><i class="fas fa-info-circle"></i> get in touch</h2>
+                
+                <div class="info-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div class="details">
+                        <h3>Address</h3>
+                        <p>123 Accounting Tower, Dhaka 1200, Bangladesh</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <div class="details">
+                        <h3>Phone</h3>
+                        <p>+880 1234 567890<br>+880 9876 543210</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <i class="fas fa-envelope"></i>
+                    <div class="details">
+                        <h3>Email</h3>
+                        <p>info@khoiumaccounting.com<br>support@khoiumaccounting.com</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <i class="fas fa-globe"></i>
+                    <div class="details">
+                        <h3>Website</h3>
+                        <p>www.khoiumaccounting.com</p>
+                    </div>
+                </div>
+                
+                <div class="business-hours">
+                    <h3><i class="fas fa-clock"></i> Business Hours</h3>
+                    <ul>
+                        <li><span>Sun-Thu:</span> 9:00 AM - 6:00 PM</li>
+                        <li><span>Friday:</span> Closed</li>
+                        <li><span>Saturday:</span> 10:00 AM - 4:00 PM</li>
+                    </ul>
+                </div>
+                
+                <div class="map-container">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d233667.8223924372!2d90.27923772217214!3d23.780887456211758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b087026b81%3A0x8fa563bbff5908ee!2sDhaka!5e0!3m2!1sen!2sbd!4v1644567890123!5m2!1sen!2sbd" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+            </div>
+            
+            <!-- Contact Form -->
+            <div class="contact-form">
+                <h2><i class="fas fa-paper-plane"></i> send message</h2>
+                
+                <div class="success-message" id="success-message">
+                    <i class="fas fa-check-circle"></i> Thank you! Your message has been sent successfully.
+                </div>
+                
+                <form id="contactForm" onsubmit="return submitContactForm(event)">
+                    <div class="form-group">
+                        <label for="name"><i class="fas fa-user"></i> your name *</label>
+                        <input type="text" id="name" name="name" placeholder="enter your full name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email"><i class="fas fa-envelope"></i> email address *</label>
+                        <input type="email" id="email" name="email" placeholder="enter your email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone"><i class="fas fa-phone"></i> phone number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="enter your phone number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject"><i class="fas fa-tag"></i> subject *</label>
+                        <select id="subject" name="subject" required>
+                            <option value="">-- select subject --</option>
+                            <option value="general">General Inquiry</option>
+                            <option value="support">Technical Support</option>
+                            <option value="feedback">Feedback</option>
+                            <option value="billing">Billing Question</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="message"><i class="fas fa-comment"></i> message *</label>
+                        <textarea id="message" name="message" placeholder="enter your message..." required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-paper-plane"></i> send message
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <h2>frequently asked <span>questions</span></h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3><i class="fas fa-question-circle"></i> Is the software free?</h3>
+                    <p>Yes! Khoium's Accounting is completely free to use with all features included.</p>
+                </div>
+                <div class="faq-item">
+                    <h3><i class="fas fa-question-circle"></i> Where is my data stored?</h3>
+                    <p>All data is stored locally in your browser using localStorage. No data is sent to any server.</p>
+                </div>
+                <div class="faq-item">
+                    <h3><i class="fas fa-question-circle"></i> Can I export my data?</h3>
+                    <p>Yes, you can export transactions to CSV and download complete JSON backups.</p>
+                </div>
+                <div class="faq-item">
+                    <h3><i class="fas fa-question-circle"></i> Do I need internet?</h3>
+                    <p>Once loaded, the app works offline. Internet is only needed for initial load and maps.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- contact section ends -->
+
+    <!-- footer section starts -->
+    <footer class="footer">
+        <section>
+            <div class="share">
+                <a href="#" class="fab fa-facebook-f"></a>
+                <a href="#" class="fab fa-twitter"></a>
+                <a href="#" class="fab fa-linkedin"></a>
+                <a href="#" class="fab fa-instagram"></a>
+                <a href="#" class="fab fa-youtube"></a>
+            </div>
+            <div class="credit">&copy; 2026 Khoium's Accounting. All rights reserved.</div>
+        </section>
+    </footer>
+    <!-- footer section ends -->
+
+    <!-- custom js file link -->
+    <script src="js/script.js"></script>
+    
+    <script>
+        function submitContactForm(event) {
+            event.preventDefault();
+            
+            // Show success message
+            const successMsg = document.getElementById('success-message');
+            successMsg.classList.add('show');
+            
+            // Reset form
+            document.getElementById('contactForm').reset();
+            
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 5000);
+            
+            // Log to console (in real app, this would send to server)
+            console.log('Form submitted:', {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                subject: document.getElementById('subject').value,
+                message: document.getElementById('message').value
+            });
+            
+            return false;
+        }
+    </script>
+    <script>
+    // Safety checks for all pages
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ensure transactions array exists
+        if (typeof transactions === 'undefined') {
+            window.transactions = [];
+        }
+        
+        // Ensure ledgers array exists
+        if (typeof ledgers === 'undefined') {
+            window.ledgers = [];
+        }
+        
+        // Ensure banks array exists
+        if (typeof banks === 'undefined') {
+            window.banks = [];
+        }
+        
+        // Ensure customSubGroups array exists
+        if (typeof customSubGroups === 'undefined') {
+            window.customSubGroups = [];
+        }
+        
+        console.log('Safety checks completed');
+    });
+</script>
+</body>
+</html>

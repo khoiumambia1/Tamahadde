@@ -626,6 +626,7 @@
     <!-- custom js file link -->
     <script src="js/script.js"></script>
     <script src="js/accounting.js"></script>
+    <script src="js/utils.js"></script>
     
     <!-- Helper functions for sub group input -->
     <script>
@@ -697,5 +698,31 @@
             if (input) input.value = '';
         }
     </script>
+    <script>
+    // Safety checks for all pages
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ensure transactions array exists
+        if (typeof transactions === 'undefined') {
+            window.transactions = [];
+        }
+        
+        // Ensure ledgers array exists
+        if (typeof ledgers === 'undefined') {
+            window.ledgers = [];
+        }
+        
+        // Ensure banks array exists
+        if (typeof banks === 'undefined') {
+            window.banks = [];
+        }
+        
+        // Ensure customSubGroups array exists
+        if (typeof customSubGroups === 'undefined') {
+            window.customSubGroups = [];
+        }
+        
+        console.log('Safety checks completed');
+    });
+</script>
 </body>
 </html>

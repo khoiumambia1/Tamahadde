@@ -4,42 +4,42 @@
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let ledgers = JSON.parse(localStorage.getItem('ledgers')) || [
     // Cash and Bank Accounts (Asset)
-    { id: 1, name: 'cash', type: 'asset', category: 'cash', group: '' },
-    { id: 2, name: 'bank - sbl', type: 'asset', category: 'bank', group: '' },
-    { id: 3, name: 'bank - jbl', type: 'asset', category: 'bank', group: '' },
-    { id: 4, name: 'bank - agrani', type: 'asset', category: 'bank', group: '' },
-    { id: 5, name: 'bank - rupali', type: 'asset', category: 'bank', group: '' },
-    { id: 6, name: 'bank - bdbl', type: 'asset', category: 'bank', group: '' },
-    { id: 7, name: 'bank - bkash', type: 'asset', category: 'bank', group: '' },
-    { id: 8, name: 'bank - nagad', type: 'asset', category: 'bank', group: '' },
-    { id: 9, name: 'bank - rocket', type: 'asset', category: 'bank', group: '' },
-    { id: 10, name: 'bank - dbbl', type: 'asset', category: 'bank', group: '' },
-    { id: 11, name: 'bank - ebbl', type: 'asset', category: 'bank', group: '' },
-    { id: 12, name: 'bank - ibbl', type: 'asset', category: 'bank', group: '' },
-    { id: 13, name: 'bank - pubali', type: 'asset', category: 'bank', group: '' },
-    { id: 14, name: 'bank - ucb', type: 'asset', category: 'bank', group: '' },
-    { id: 15, name: 'bank - city', type: 'asset', category: 'bank', group: '' },
-    { id: 16, name: 'bank - ncc', type: 'asset', category: 'bank', group: '' },
-    { id: 17, name: 'bank - prime', type: 'asset', category: 'bank', group: '' },
-    { id: 18, name: 'bank - mercantile', type: 'asset', category: 'bank', group: '' },
-    { id: 19, name: 'bank - mutual', type: 'asset', category: 'bank', group: '' },
-    { id: 20, name: 'bank - standard', type: 'asset', category: 'bank', group: '' },
-    { id: 21, name: 'bank - one', type: 'asset', category: 'bank', group: '' },
-    { id: 22, name: 'bank - exim', type: 'asset', category: 'bank', group: '' },
-    { id: 23, name: 'bank - fsibl', type: 'asset', category: 'bank', group: '' },
-    { id: 24, name: 'bank - sjibl', type: 'asset', category: 'bank', group: '' },
-    { id: 25, name: 'bank - al-arafah', type: 'asset', category: 'bank', group: '' },
-    { id: 26, name: 'bank - sibl', type: 'asset', category: 'bank', group: '' },
-    { id: 27, name: 'bank - midland', type: 'asset', category: 'bank', group: '' },
-    { id: 28, name: 'bank - modhumoti', type: 'asset', category: 'bank', group: '' },
-    { id: 29, name: 'bank - nrbc', type: 'asset', category: 'bank', group: '' },
-    { id: 30, name: 'bank - trust', type: 'asset', category: 'bank', group: '' },
-    { id: 31, name: 'bank - ab', type: 'asset', category: 'bank', group: '' },
-    { id: 32, name: 'bank - krishi', type: 'asset', category: 'bank', group: '' },
-    { id: 33, name: 'bank - rajuk', type: 'asset', category: 'bank', group: '' },
-    { id: 34, name: 'bank - probashi', type: 'asset', category: 'bank', group: '' },
-    { id: 35, name: 'bank - ansar', type: 'asset', category: 'bank', group: '' },
-    { id: 36, name: 'bank - grameen', type: 'asset', category: 'bank', group: '' },
+    { id: 1, name: 'cash', type: 'asset', category: 'cash', group: 'current_asset' },
+    { id: 2, name: 'bank - sbl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 3, name: 'bank - jbl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 4, name: 'bank - agrani', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 5, name: 'bank - rupali', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 6, name: 'bank - bdbl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 7, name: 'bank - bkash', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 8, name: 'bank - nagad', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 9, name: 'bank - rocket', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 10, name: 'bank - dbbl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 11, name: 'bank - ebbl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 12, name: 'bank - ibbl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 13, name: 'bank - pubali', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 14, name: 'bank - ucb', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 15, name: 'bank - city', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 16, name: 'bank - ncc', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 17, name: 'bank - prime', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 18, name: 'bank - mercantile', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 19, name: 'bank - mutual', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 20, name: 'bank - standard', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 21, name: 'bank - one', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 22, name: 'bank - exim', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 23, name: 'bank - fsibl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 24, name: 'bank - sjibl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 25, name: 'bank - al-arafah', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 26, name: 'bank - sibl', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 27, name: 'bank - midland', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 28, name: 'bank - modhumoti', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 29, name: 'bank - nrbc', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 30, name: 'bank - trust', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 31, name: 'bank - ab', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 32, name: 'bank - krishi', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 33, name: 'bank - rajuk', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 34, name: 'bank - probashi', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 35, name: 'bank - ansar', type: 'asset', category: 'bank', group: 'current_asset' },
+    { id: 36, name: 'bank - grameen', type: 'asset', category: 'bank', group: 'current_asset' },
     
     // Income Accounts
     { id: 37, name: 'sales', type: 'income', category: 'income', group: '' },
@@ -272,6 +272,26 @@ function updateGroupDropdown() {
     }
     
     groupSelect.innerHTML = groupOptions;
+}
+// ==================== AMOUNT VALIDATION FUNCTION ====================
+function validateAmount(amount, fieldName = 'Amount') {
+    // Check if amount exists and is a number
+    if (amount === undefined || amount === null || isNaN(amount)) {
+        return { valid: false, message: `${fieldName} is invalid` };
+    }
+    
+    // Check if amount is negative
+    if (amount < 0) {
+        return { valid: false, message: `${fieldName} cannot be negative` };
+    }
+    
+    // Check if amount is zero
+    if (amount === 0) {
+        return { valid: false, message: `${fieldName} must be greater than zero` };
+    }
+    
+    // Amount is valid
+    return { valid: true };
 }
 
 // ==================== BANK MANAGEMENT ====================
@@ -1072,14 +1092,14 @@ function createNewBank() {
     banks.push(newBank);
     localStorage.setItem('banks', JSON.stringify(banks));
     
-    // Also add as ledger if not exists
+    // Also add as ledger if not exists - NOW WITH SUBGROUP
     if (!ledgers.some(l => l.name === bankName)) {
         const newLedger = {
             id: ledgers.length + 1,
             name: bankName,
             type: 'asset',
             category: 'bank',
-            group: ''
+            group: 'current_asset'  // ADDED: Set subgroup to Current Asset
         };
         ledgers.push(newLedger);
         localStorage.setItem('ledgers', JSON.stringify(ledgers));
@@ -2585,40 +2605,59 @@ function initJournalSubgroupRow(row) {
     
     if (!subgroupInput || !subgroupHidden || !subgroupList) return;
     
-    // Update subgroup datalist based on selected ledger
+    // Function to update subgroup datalist based on selected ledger type
     function updateSubgroupDatalistForRow() {
-        if (!ledgerHidden || !ledgerHidden.value) {
-            subgroupList.innerHTML = '';
-            return;
-        }
-        
-        // Find the selected ledger
-        const ledgerId = ledgerHidden.value;
-        const ledger = ledgers.find(l => l.id == ledgerId);
-        
-        if (!ledger) return;
-        
-        // Determine subgroup type based on ledger type
         let groups = [];
-        if (ledger.type === 'expense') {
-            groups = [...ledgerSubGroups.expense];
-        } else if (ledger.type === 'asset') {
-            groups = [...ledgerSubGroups.asset];
-        } else if (ledger.type === 'liability') {
-            groups = [...ledgerSubGroups.liability];
-        } else if (ledger.type === 'income') {
-            groups = [...ledgerSubGroups.income];
-        } else if (ledger.type === 'equity') {
-            groups = [...ledgerSubGroups.equity];
+        
+        // If ledger is selected, filter subgroups by ledger type
+        if (ledgerHidden && ledgerHidden.value) {
+            const ledgerId = ledgerHidden.value;
+            const ledger = ledgers.find(l => l.id == ledgerId);
+            
+            if (ledger) {
+                // Get subgroups based on ledger type
+                if (ledger.type === 'expense') {
+                    groups = [...ledgerSubGroups.expense];
+                } else if (ledger.type === 'asset') {
+                    groups = [...ledgerSubGroups.asset];
+                } else if (ledger.type === 'liability') {
+                    groups = [...ledgerSubGroups.liability];
+                } else if (ledger.type === 'income') {
+                    groups = [...ledgerSubGroups.income];
+                } else if (ledger.type === 'equity') {
+                    groups = [...ledgerSubGroups.equity];
+                }
+                
+                // Add custom subgroups of the same type
+                const customGroups = customSubGroups.filter(g => g.type === ledger.type);
+                groups = [...groups, ...customGroups];
+            }
+        } else {
+            // If no ledger selected, show ALL subgroups (grouped by type)
+            // This is helpful for users to see available options
+            Object.keys(ledgerSubGroups).forEach(type => {
+                groups = [...groups, ...ledgerSubGroups[type].map(g => ({
+                    ...g,
+                    type: type
+                }))];
+            });
+            // Add all custom subgroups
+            groups = [...groups, ...customSubGroups];
         }
         
-        // Add custom sub groups
-        const customGroups = customSubGroups.filter(g => g.type === ledger.type);
-        groups = [...groups, ...customGroups];
+        // Remove duplicates (by value)
+        const uniqueGroups = [];
+        const seen = new Set();
+        groups.forEach(group => {
+            if (!seen.has(group.value)) {
+                seen.add(group.value);
+                uniqueGroups.push(group);
+            }
+        });
         
         // Build datalist options
         let options = '';
-        groups.sort((a, b) => a.label.localeCompare(b.label)).forEach(group => {
+        uniqueGroups.sort((a, b) => a.label.localeCompare(b.label)).forEach(group => {
             options += `<option value="${group.label}">`;
         });
         
@@ -2629,39 +2668,25 @@ function initJournalSubgroupRow(row) {
     updateSubgroupDatalistForRow();
     
     // Watch for ledger changes
-    if (ledgerHidden) {
-        // Use a simple interval or event listener instead of MutationObserver
-        const checkLedgerChange = function() {
-            updateSubgroupDatalistForRow();
-        };
-        
-        // Listen for change events on ledger input
-        const ledgerInput = row.querySelector('.journal-ledger-input');
-        if (ledgerInput) {
-            ledgerInput.addEventListener('change', checkLedgerChange);
-            ledgerInput.addEventListener('blur', checkLedgerChange);
-        }
+    const ledgerInput = row.querySelector('.journal-ledger-input');
+    if (ledgerInput) {
+        ledgerInput.addEventListener('change', updateSubgroupDatalistForRow);
+        ledgerInput.addEventListener('blur', updateSubgroupDatalistForRow);
     }
     
-    // Handle input
+    // Handle input - search as you type
     subgroupInput.addEventListener('input', function() {
-        const value = this.value;
-        const ledgerId = ledgerHidden ? ledgerHidden.value : null;
-        const ledger = ledgers.find(l => l.id == ledgerId);
+        const value = this.value.toLowerCase();
         
-        if (!ledger) return;
+        // Get all possible groups
+        let allGroups = [];
+        Object.keys(ledgerSubGroups).forEach(type => {
+            allGroups = [...allGroups, ...ledgerSubGroups[type]];
+        });
+        allGroups = [...allGroups, ...customSubGroups];
         
-        // Get all groups for this ledger type
-        let groups = [];
-        if (ledger.type === 'expense') groups = [...ledgerSubGroups.expense, ...customSubGroups.filter(g => g.type === 'expense')];
-        else if (ledger.type === 'asset') groups = [...ledgerSubGroups.asset, ...customSubGroups.filter(g => g.type === 'asset')];
-        else if (ledger.type === 'liability') groups = [...ledgerSubGroups.liability, ...customSubGroups.filter(g => g.type === 'liability')];
-        else if (ledger.type === 'income') groups = [...ledgerSubGroups.income, ...customSubGroups.filter(g => g.type === 'income')];
-        else if (ledger.type === 'equity') groups = [...ledgerSubGroups.equity, ...customSubGroups.filter(g => g.type === 'equity')];
-        
-        // Find match
-        const matchedGroup = groups.find(g => 
-            g.label.toLowerCase().includes(value.toLowerCase())
+        const matchedGroup = allGroups.find(g => 
+            g.label.toLowerCase().includes(value)
         );
         
         if (matchedGroup) {
@@ -2672,48 +2697,36 @@ function initJournalSubgroupRow(row) {
     // Handle selection from datalist
     subgroupInput.addEventListener('change', function() {
         const value = this.value;
-        const ledgerId = ledgerHidden ? ledgerHidden.value : null;
-        const ledger = ledgers.find(l => l.id == ledgerId);
         
-        if (!ledger) return;
+        // Get all possible groups
+        let allGroups = [];
+        Object.keys(ledgerSubGroups).forEach(type => {
+            allGroups = [...allGroups, ...ledgerSubGroups[type]];
+        });
+        allGroups = [...allGroups, ...customSubGroups];
         
-        // Get all groups for this ledger type
-        let groups = [];
-        if (ledger.type === 'expense') groups = [...ledgerSubGroups.expense, ...customSubGroups.filter(g => g.type === 'expense')];
-        else if (ledger.type === 'asset') groups = [...ledgerSubGroups.asset, ...customSubGroups.filter(g => g.type === 'asset')];
-        else if (ledger.type === 'liability') groups = [...ledgerSubGroups.liability, ...customSubGroups.filter(g => g.type === 'liability')];
-        else if (ledger.type === 'income') groups = [...ledgerSubGroups.income, ...customSubGroups.filter(g => g.type === 'income')];
-        else if (ledger.type === 'equity') groups = [...ledgerSubGroups.equity, ...customSubGroups.filter(g => g.type === 'equity')];
-        
-        // Find exact match
-        const matchedGroup = groups.find(g => 
+        const matchedGroup = allGroups.find(g => 
             g.label === value || g.label.toLowerCase() === value.toLowerCase()
         );
         
         if (matchedGroup) {
             subgroupHidden.value = matchedGroup.value;
             this.value = matchedGroup.label;
+            validateJournalForSave();
         }
     });
     
     // Handle blur
     subgroupInput.addEventListener('blur', function() {
         if (!subgroupHidden.value && this.value) {
-            const ledgerId = ledgerHidden ? ledgerHidden.value : null;
-            const ledger = ledgers.find(l => l.id == ledgerId);
+            // Get all possible groups
+            let allGroups = [];
+            Object.keys(ledgerSubGroups).forEach(type => {
+                allGroups = [...allGroups, ...ledgerSubGroups[type]];
+            });
+            allGroups = [...allGroups, ...customSubGroups];
             
-            if (!ledger) return;
-            
-            // Get all groups for this ledger type
-            let groups = [];
-            if (ledger.type === 'expense') groups = [...ledgerSubGroups.expense, ...customSubGroups.filter(g => g.type === 'expense')];
-            else if (ledger.type === 'asset') groups = [...ledgerSubGroups.asset, ...customSubGroups.filter(g => g.type === 'asset')];
-            else if (ledger.type === 'liability') groups = [...ledgerSubGroups.liability, ...customSubGroups.filter(g => g.type === 'liability')];
-            else if (ledger.type === 'income') groups = [...ledgerSubGroups.income, ...customSubGroups.filter(g => g.type === 'income')];
-            else if (ledger.type === 'equity') groups = [...ledgerSubGroups.equity, ...customSubGroups.filter(g => g.type === 'equity')];
-            
-            // Try to find partial match
-            const matchedGroup = groups.find(g => 
+            const matchedGroup = allGroups.find(g => 
                 g.label.toLowerCase().includes(this.value.toLowerCase())
             );
             
@@ -2729,7 +2742,7 @@ function initJournalSubgroupRow(row) {
         if (e.key === 'Enter') {
             e.preventDefault();
             
-            const isFirstRow = row === document.querySelector('.journal-entry-row');
+            const isFirstRow = row === document.querySelector('.journal-entry-row:first-child');
             if (isFirstRow) {
                 // First row - only debit is enabled
                 const debitInput = row.querySelector('.journal-debit');
@@ -2737,15 +2750,10 @@ function initJournalSubgroupRow(row) {
                     debitInput.focus();
                 }
             } else {
-                // Other rows - both debit and credit are enabled
-                // Default to debit, but let user choose
+                // Other rows - move to debit (user can tab to credit if needed)
                 const debitInput = row.querySelector('.journal-debit');
-                const creditInput = row.querySelector('.journal-credit');
-                
                 if (debitInput && !debitInput.readOnly) {
                     debitInput.focus();
-                } else if (creditInput && !creditInput.readOnly) {
-                    creditInput.focus();
                 }
             }
         }
@@ -3173,110 +3181,109 @@ function closeModal() {
 }
 
     function createNewLedger() {
-        const name = document.getElementById('modal-ledger-name').value.trim();
-        const type = document.getElementById('modal-ledger-type').value;
-        const group = document.getElementById('modal-ledger-group').value;
-        const entryType = document.getElementById('modal-entry-type').value;
-        const rowId = document.getElementById('modal-row-id').value;
-        
-        if(!name) {
-            alert('Please enter a ledger name');
-            document.getElementById('modal-ledger-name').focus();
-            return;
-        }
-        
-        // Make sure ledgers is defined
-        if (typeof ledgers === 'undefined') {
-            ledgers = window.ledgers || [];
-        }
-        
-        // Check if ledger already exists - with safety check
-        if (ledgers && Array.isArray(ledgers)) {
-            const exists = ledgers.some(l => 
-                l && l.name && typeof l.name === 'string' && 
-                l.name.toLowerCase() === name.toLowerCase()
-            );
-            
-            if (exists) {
-                alert('Ledger already exists');
-                document.getElementById('modal-ledger-name').focus();
-                return;
-            }
-        }
-        
-        let category = type;
-        if (name.toLowerCase().includes('bank')) {
-            category = 'bank';
-        } else if (type === 'asset' && name.toLowerCase().includes('receivable')) {
-            category = 'receivable';
-        } else if (type === 'liability' && name.toLowerCase().includes('payable')) {
-            category = 'payable';
-        } else if (type === 'expense') {
-            category = 'expense';
-        } else if (type === 'income') {
-            category = 'income';
-        } else if (type === 'asset' && name.toLowerCase().includes('cash')) {
-            category = 'cash';
-        }
-        
-        // Make sure ledgers is an array before pushing
-        if (!ledgers) ledgers = [];
-        
-        const newLedger = {
-            id: ledgers.length + 1,
-            name: name.toLowerCase(),
-            type: type,
-            category: category,
-            group: group
-        };
-        
-        ledgers.push(newLedger);
-        localStorage.setItem('ledgers', JSON.stringify(ledgers));
-        updateAllLedgerDropdowns();
-        
-        if(entryType === 'payment' || entryType === 'receipt') {
-            const ledgerSelect = document.getElementById(`${entryType}-ledger`);
-            if (ledgerSelect) {
-                ledgerSelect.value = newLedger.id;
-                handleLedgerSelect(entryType);
-            }
-        } else if(entryType === 'journal' && rowId !== '') {
-            const rows = document.querySelectorAll('.journal-entry-row');
-            const targetRow = rows[parseInt(rowId)];
-            
-            if(targetRow) {
-                const select = targetRow.querySelector('.journal-ledger-select');
-                const newLedgerBtn = targetRow.querySelector('.journal-new-ledger-btn');
-                const newLedgerGroup = targetRow.querySelector('.journal-new-ledger-input-group');
-                
-                if(select) {
-                    select.value = newLedger.id;
-                    select.style.display = 'block';
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-                
-                if(newLedgerBtn) newLedgerBtn.style.display = 'block';
-                if(newLedgerGroup) newLedgerGroup.remove();
-                
-                validateJournalForSave();
-            }
-        }
-        
-        closeModal();
-    }
-
-// ==================== SAVE FUNCTIONS ====================
-
-function saveEntry(type) {
-    // Make sure banks is defined
-    if (typeof banks === 'undefined') {
-        banks = window.banks || [];
+    const name = document.getElementById('modal-ledger-name').value.trim();
+    const type = document.getElementById('modal-ledger-type').value;
+    const group = document.getElementById('modal-ledger-group').value;
+    const entryType = document.getElementById('modal-entry-type').value;
+    const rowId = document.getElementById('modal-row-id').value;
+    
+    if(!name) {
+        alert('Please enter a ledger name');
+        document.getElementById('modal-ledger-name').focus();
+        return;
     }
     
     // Make sure ledgers is defined
     if (typeof ledgers === 'undefined') {
         ledgers = window.ledgers || [];
     }
+    
+    // Check if ledger already exists - with safety check
+    if (ledgers && Array.isArray(ledgers)) {
+        const exists = ledgers.some(l => 
+            l && l.name && typeof l.name === 'string' && 
+            l.name.toLowerCase() === name.toLowerCase()
+        );
+        
+        if (exists) {
+            alert('Ledger already exists');
+            document.getElementById('modal-ledger-name').focus();
+            return;
+        }
+    }
+    
+    let category = type;
+    let assignedGroup = group; // Default to selected group
+    
+    // Auto-set category and group based on name patterns
+    if (name.toLowerCase().includes('bank')) {
+        category = 'bank';
+        assignedGroup = 'current_asset';  // Banks go to Current Asset
+    } else if (type === 'asset' && name.toLowerCase().includes('cash')) {
+        category = 'cash';
+        assignedGroup = 'current_asset';  // Cash goes to Current Asset
+    } else if (type === 'asset' && name.toLowerCase().includes('receivable')) {
+        category = 'receivable';
+        assignedGroup = 'receivable';  // Accounts Receivable
+    } else if (type === 'liability' && name.toLowerCase().includes('payable')) {
+        category = 'payable';
+        assignedGroup = 'payable';  // Accounts Payable
+    } else if (type === 'expense') {
+        category = 'expense';
+        // Keep user-selected group or default to empty
+    } else if (type === 'income') {
+        category = 'income';
+        // Keep user-selected group or default to empty
+    }
+    
+    // Make sure ledgers is an array before pushing
+    if (!ledgers) ledgers = [];
+    
+    const newLedger = {
+        id: ledgers.length + 1,
+        name: name.toLowerCase(),
+        type: type,
+        category: category,
+        group: assignedGroup || ''  // Use assigned group or empty string
+    };
+    
+    ledgers.push(newLedger);
+    localStorage.setItem('ledgers', JSON.stringify(ledgers));
+    updateAllLedgerDropdowns();
+    
+    if(entryType === 'payment' || entryType === 'receipt') {
+        const ledgerSelect = document.getElementById(`${entryType}-ledger`);
+        if (ledgerSelect) {
+            ledgerSelect.value = newLedger.id;
+            handleLedgerSelect(entryType);
+        }
+    } else if(entryType === 'journal' && rowId !== '') {
+        const rows = document.querySelectorAll('.journal-entry-row');
+        const targetRow = rows[parseInt(rowId)];
+        
+        if(targetRow) {
+            const select = targetRow.querySelector('.journal-ledger-select');
+            const newLedgerBtn = targetRow.querySelector('.journal-new-ledger-btn');
+            const newLedgerGroup = targetRow.querySelector('.journal-new-ledger-input-group');
+            
+            if(select) {
+                select.value = newLedger.id;
+                select.style.display = 'block';
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            if(newLedgerBtn) newLedgerBtn.style.display = 'block';
+            if(newLedgerGroup) newLedgerGroup.remove();
+            
+            validateJournalForSave();
+        }
+    }
+    
+    closeModal();
+}
+
+// ==================== SAVE FUNCTIONS ====================
+function saveEntry(type) {
     console.log('========== SAVE ENTRY DEBUG ==========');
     console.log('Saving entry type:', type);
     
@@ -3286,6 +3293,14 @@ function saveEntry(type) {
     const paymentType = document.querySelector(`input[name="${type}-type"]:checked`)?.value;
     const amount = parseFloat(document.getElementById(`${type}-amount`)?.value) || 0;
     const narration = document.getElementById(`${type}-narration`)?.value || '';
+    
+    // ===== NEW VALIDATION: Check if amount is valid =====
+    const amountValidation = validateAmount(amount, 'Amount');
+    if (!amountValidation.valid) {
+        alert(amountValidation.message);
+        document.getElementById(`${type}-amount`).focus();
+        return;
+    }
     
     // Log them
     console.log('- date:', date);
@@ -3383,6 +3398,13 @@ function saveEntry(type) {
         if (bankLedger) {
             cashBankLedgerId = bankLedger.id;
             cashBankLedgerName = bankLedger.name;
+            // ===== ADD THIS: Ensure bank has current_asset subgroup =====
+        if (!bankLedger.group || bankLedger.group === '') {
+            bankLedger.group = 'current_asset';
+            // Save the updated ledger
+            localStorage.setItem('ledgers', JSON.stringify(ledgers));
+            console.log(`Updated ${bankLedger.name} with current_asset subgroup`);
+        }
         } else {
             console.log('Bank ledger not found, creating new one');
             // If bank ledger not found, create it
@@ -3432,6 +3454,14 @@ function saveEntry(type) {
         if (cashLedger) {
             cashBankLedgerId = cashLedger.id;
             cashBankLedgerName = cashLedger.name;
+            // ===== FIX: Set cash subgroup to current_asset =====
+        // Update the cash ledger's group if it's not set
+        if (!cashLedger.group || cashLedger.group === '') {
+            cashLedger.group = 'current_asset';
+            // Save the updated ledger
+            localStorage.setItem('ledgers', JSON.stringify(ledgers));
+            console.log('Updated cash ledger with current_asset subgroup');
+        }
         } else {
             alert('Cash ledger not found! Please create a cash ledger first.');
             return;
@@ -3467,12 +3497,6 @@ function saveEntry(type) {
         alert('Please select a ledger');
         const ledgerInput = document.getElementById(`${type}-ledger-input`);
         if (ledgerInput) ledgerInput.focus();
-        return;
-    }
-    
-    if (!amount || amount <= 0) {
-        alert('Please enter a valid amount');
-        document.getElementById(`${type}-amount`).focus();
         return;
     }
     
@@ -3541,105 +3565,118 @@ function saveEntry(type) {
     }
     
     // ========== CREATE DOUBLE-ENTRY TRANSACTIONS ==========
-    const transactions_to_add = [];
-    const baseId = Date.now();
-    
-    if (type === 'payment') {
-        // PAYMENT: Cash/Bank is CREDIT, Other ledger is DEBIT
-        console.log('Creating PAYMENT entries:');
-        console.log(`- Credit: ${cashBankLedgerName} (Cash/Bank) - ${amount}`);
-        console.log(`- Debit: ${otherLedger.name} (Other Ledger) - ${amount}`);
+const transactions_to_add = [];
+const baseId = Date.now();
 
-        // Entry 1: Credit Cash/Bank (decreases)
-        transactions_to_add.push({
-            id: baseId,
-            date: date,
-            voucher: voucher,
-            type: type,
-            ledger: cashBankLedgerName,
-            payment_type: paymentType,
-            bank_name: paymentType === 'bank' ? bankName : null,
-            account_number: paymentType === 'bank' ? accountNumber : null,
-            amount: amount,
-            debit: 0,
-            credit: amount,
-            subgroup: '',
-            narration: transactionNarration || `Payment made - ${otherLedger.name}`,
-            entry_type: type
-        });
-        
-        // Entry 2: Debit Other ledger
-        let subgroupValue = '';
-        const subgroupElement = document.getElementById(`${type}-subgroup`);
-        if (subgroupElement) {
-            subgroupValue = subgroupElement.value || '';
-        }
-        
-        transactions_to_add.push({
-            id: baseId + 1,
-            date: date,
-            voucher: voucher,
-            type: type,
-            ledger: otherLedger.name,
-            payment_type: paymentType,
-            bank_name: paymentType === 'bank' ? bankName : null,
-            account_number: paymentType === 'bank' ? accountNumber : null,
-            amount: amount,
-            debit: amount,
-            credit: 0,
-            subgroup: subgroupValue,
-            narration: transactionNarration || `Payment made - ${cashBankLedgerName}`,
-            entry_type: type
-        });
-    } 
-    else {
-        // RECEIPT: Cash/Bank is DEBIT, Other ledger is CREDIT
-        console.log('Creating RECEIPT entries:');
-        console.log(`- Debit: ${cashBankLedgerName} (Cash/Bank) - ${amount}`);
-        console.log(`- Credit: ${otherLedger.name} (Other Ledger) - ${amount}`);
-        
-        // Entry 1: Debit Cash/Bank (increases)
-        transactions_to_add.push({
-            id: baseId,
-            date: date,
-            voucher: voucher,
-            type: type,
-            ledger: cashBankLedgerName,
-            payment_type: paymentType,
-            bank_name: paymentType === 'bank' ? bankName : null,
-            account_number: paymentType === 'bank' ? accountNumber : null,
-            amount: amount,
-            debit: amount,
-            credit: 0,
-            subgroup: '',
-            narration: transactionNarration || `Receipt received - ${otherLedger.name}`,
-            entry_type: type
-        });
-        
-        let subgroupValue = '';
-        const subgroupElement = document.getElementById(`${type}-subgroup`);
-        if (subgroupElement) {
-            subgroupValue = subgroupElement.value || '';
-        }
-        
-        // Entry 2: Credit Other ledger (increases income/liability)
-        transactions_to_add.push({
-            id: baseId + 1,
-            date: date,
-            voucher: voucher,
-            type: type,
-            ledger: otherLedger.name,
-            payment_type: paymentType,
-            bank_name: paymentType === 'bank' ? bankName : null,
-            account_number: paymentType === 'bank' ? accountNumber : null,
-            amount: amount,
-            debit: 0,
-            credit: amount,
-            subgroup: subgroupValue,
-            narration: transactionNarration || `Receipt received - ${cashBankLedgerName}`,
-            entry_type: type
-        });
+// Get the subgroup for cash/bank (whichever is being used)
+let cashBankSubgroup = 'current_asset'; // Default
+
+if (paymentType === 'bank') {
+    // Find the bank ledger to get its subgroup
+    const bankLedger = ledgers.find(l => l.name.toLowerCase() === cashBankLedgerName.toLowerCase());
+    cashBankSubgroup = bankLedger?.group || 'current_asset';
+} else {
+    // Find cash ledger to get its subgroup
+    const cashLedger = ledgers.find(l => l.name.toLowerCase() === 'cash');
+    cashBankSubgroup = cashLedger?.group || 'current_asset';
+}
+
+if (type === 'payment') {
+    // PAYMENT: Cash/Bank is CREDIT, Other ledger is DEBIT
+    console.log('Creating PAYMENT entries:');
+    console.log(`- Credit: ${cashBankLedgerName} (Cash/Bank) - ${amount}`);
+    console.log(`- Debit: ${otherLedger.name} (Other Ledger) - ${amount}`);
+
+    // Entry 1: Credit Cash/Bank (decreases) - WITH SUBGROUP
+    transactions_to_add.push({
+        id: baseId,
+        date: date,
+        voucher: voucher,
+        type: type,
+        ledger: cashBankLedgerName,
+        payment_type: paymentType,
+        bank_name: paymentType === 'bank' ? bankName : null,
+        account_number: paymentType === 'bank' ? accountNumber : null,
+        amount: amount,
+        debit: 0,
+        credit: amount,
+        subgroup: cashBankSubgroup,  // <--- FIXED: Now has subgroup
+        narration: transactionNarration || `Payment made - ${otherLedger.name}`,
+        entry_type: type
+    });
+    
+    // Entry 2: Debit Other ledger
+    let subgroupValue = '';
+    const subgroupElement = document.getElementById(`${type}-subgroup`);
+    if (subgroupElement) {
+        subgroupValue = subgroupElement.value || '';
     }
+    
+    transactions_to_add.push({
+        id: baseId + 1,
+        date: date,
+        voucher: voucher,
+        type: type,
+        ledger: otherLedger.name,
+        payment_type: paymentType,
+        bank_name: paymentType === 'bank' ? bankName : null,
+        account_number: paymentType === 'bank' ? accountNumber : null,
+        amount: amount,
+        debit: amount,
+        credit: 0,
+        subgroup: subgroupValue,
+        narration: transactionNarration || `Payment made - ${cashBankLedgerName}`,
+        entry_type: type
+    });
+} 
+else {
+    // RECEIPT: Cash/Bank is DEBIT, Other ledger is CREDIT
+    console.log('Creating RECEIPT entries:');
+    console.log(`- Debit: ${cashBankLedgerName} (Cash/Bank) - ${amount}`);
+    console.log(`- Credit: ${otherLedger.name} (Other Ledger) - ${amount}`);
+    
+    // Entry 1: Debit Cash/Bank (increases) - WITH SUBGROUP
+    transactions_to_add.push({
+        id: baseId,
+        date: date,
+        voucher: voucher,
+        type: type,
+        ledger: cashBankLedgerName,
+        payment_type: paymentType,
+        bank_name: paymentType === 'bank' ? bankName : null,
+        account_number: paymentType === 'bank' ? accountNumber : null,
+        amount: amount,
+        debit: amount,
+        credit: 0,
+        subgroup: cashBankSubgroup,  // <--- FIXED: Now has subgroup
+        narration: transactionNarration || `Receipt received - ${otherLedger.name}`,
+        entry_type: type
+    });
+    
+    let subgroupValue = '';
+    const subgroupElement = document.getElementById(`${type}-subgroup`);
+    if (subgroupElement) {
+        subgroupValue = subgroupElement.value || '';
+    }
+    
+    // Entry 2: Credit Other ledger (increases income/liability)
+    transactions_to_add.push({
+        id: baseId + 1,
+        date: date,
+        voucher: voucher,
+        type: type,
+        ledger: otherLedger.name,
+        payment_type: paymentType,
+        bank_name: paymentType === 'bank' ? bankName : null,
+        account_number: paymentType === 'bank' ? accountNumber : null,
+        amount: amount,
+        debit: 0,
+        credit: amount,
+        subgroup: subgroupValue,
+        narration: transactionNarration || `Receipt received - ${cashBankLedgerName}`,
+        entry_type: type
+    });
+}
     
     // ========== SAVE TO LOCALSTORAGE ==========
     transactions = [...transactions, ...transactions_to_add];
@@ -3768,9 +3805,22 @@ function saveJournal() {
         const ledgerHidden = row.querySelector('.journal-ledger-select');
         const ledgerInput = row.querySelector('.journal-ledger-input');
         const newLedgerInput = row.querySelector('.journal-new-ledger');
-        const subgroupHidden = row.querySelector('.journal-subgroup-select');
+        const subgroupHidden = row.querySelector('.journal-subgroup-select');  // NEW: Get subgroup
         const debit = parseFloat(row.querySelector('.journal-debit')?.value) || 0;
         const credit = parseFloat(row.querySelector('.journal-credit')?.value) || 0;
+        
+        // Validate amounts
+        if (debit < 0) {
+            alert(`Row ${index + 1}: Debit amount cannot be negative`);
+            hasErrors = true;
+            return;
+        }
+        
+        if (credit < 0) {
+            alert(`Row ${index + 1}: Credit amount cannot be negative`);
+            hasErrors = true;
+            return;
+        }
         
         // First row cannot have credit
         if (index === 0 && credit > 0) {
@@ -3779,7 +3829,7 @@ function saveJournal() {
             return;
         }
         
-        // Get ledger ID from hidden field or find by input value
+        // Get ledger ID
         let ledgerId = ledgerHidden ? ledgerHidden.value : null;
         
         // If hidden field is empty but input has value, try to find matching ledger
@@ -3806,7 +3856,7 @@ function saveJournal() {
                 return;
             }
             
-            // Check if ledger already exists - CASE INSENSITIVE
+            // Check if ledger already exists
             let existingLedger = ledgers.find(l => l.name.toLowerCase() === newLedgerName.toLowerCase());
             if(existingLedger) {
                 ledgerId = existingLedger.id;
@@ -3815,15 +3865,13 @@ function saveJournal() {
                 const newLedger = {
                     id: ledgers.length + 1,
                     name: newLedgerName.toLowerCase(),
-                    type: 'asset',
+                    type: 'asset', // Default type, you might want to let user choose
                     category: 'asset',
                     group: ''
                 };
                 ledgers.push(newLedger);
                 localStorage.setItem('ledgers', JSON.stringify(ledgers));
                 ledgerId = newLedger.id;
-                
-                // Update dropdowns
                 updateAllLedgerDropdowns();
             }
         }
@@ -3832,15 +3880,42 @@ function saveJournal() {
         if(ledgerId && (debit > 0 || credit > 0)) {
             const ledger = ledgers.find(l => l.id == ledgerId);
             if(ledger) {
-                // Get subgroup value
-                const subgroupValue = subgroupHidden ? subgroupHidden.value : '';
+                // Get subgroup value - NEW
+                let subgroupValue = '';
+                if (subgroupHidden) {
+                    subgroupValue = subgroupHidden.value || '';
+                } else {
+                    // If no subgroup hidden, try to get from input
+                    const subgroupInput = row.querySelector('.journal-subgroup-input');
+                    if (subgroupInput && subgroupInput.value) {
+                        // Try to find matching subgroup
+                        let allGroups = [];
+                        Object.keys(ledgerSubGroups).forEach(type => {
+                            allGroups = [...allGroups, ...ledgerSubGroups[type]];
+                        });
+                        allGroups = [...allGroups, ...customSubGroups];
+                        
+                        const matchedGroup = allGroups.find(g => 
+                            g.label.toLowerCase() === subgroupInput.value.toLowerCase() ||
+                            g.value === subgroupInput.value.toLowerCase()
+                        );
+                        
+                        if (matchedGroup) {
+                            subgroupValue = matchedGroup.value;
+                        } else {
+                            // Create a new subgroup from input
+                            subgroupValue = subgroupInput.value.toLowerCase().replace(/\s+/g, '_');
+                        }
+                    }
+                }
                 
                 rows.push({ 
                     ledger: ledger.name, 
                     debit: debit, 
                     credit: credit,
-                    subgroup: subgroupHidden?.value || '' // ← ADD THIS LINE
+                    subgroup: subgroupValue  // NEW: Save subgroup
                 });
+                
                 totalDebit += debit;
                 totalCredit += credit;
             }
@@ -3872,7 +3947,7 @@ function saveJournal() {
             return;
         }
         
-        // Find cash ledger - CASE INSENSITIVE
+        // Find cash ledger
         const cashLedger = ledgers.find(l => l.name.toLowerCase() === 'cash');
         if (!cashLedger) {
             alert('Cash ledger not found! Please create a cash ledger.');
@@ -3884,7 +3959,7 @@ function saveJournal() {
             ledger: cashLedger.name,
             debit: 0,
             credit: totalDebit,
-            subgroup: ''
+            subgroup: 'current_asset'  // Default subgroup for cash
         });
         
         totalCredit = totalDebit;
@@ -3910,7 +3985,7 @@ function saveJournal() {
             ledger: row.ledger,
             debit: row.debit,
             credit: row.credit,
-            subgroup: row.subgroup || '',
+            subgroup: row.subgroup || '',  // NEW: Save subgroup
             narration: narration || 'Journal entry',
             entry_type: 'journal'
         });
@@ -3930,7 +4005,6 @@ function saveJournal() {
     
     alert('Journal entry saved successfully!');
 }
-
 // ==================== UTILITY FUNCTIONS ====================
 
 function updateVoucherNumbers() {
@@ -4102,3 +4176,56 @@ window.updateSubGroupDatalist = updateSubGroupDatalist;
 window.showNewSubGroupModal = showNewSubGroupModal;
 window.closeSubGroupModal = closeSubGroupModal;
 window.createNewSubGroup = createNewSubGroup;
+
+// ==================== MIGRATION: Update Existing Ledgers ====================
+// Run this once to update all existing cash/bank ledgers with Current Asset subgroup
+
+function migrateLedgerSubgroups() {
+    console.log('Running migration: Adding Current Asset subgroup to cash/bank ledgers...');
+    
+    let updated = false;
+    
+    // Make sure ledgers exists
+    if (typeof ledgers === 'undefined' || !ledgers) {
+        console.log('No ledgers found');
+        return;
+    }
+    
+    ledgers.forEach(ledger => {
+        // Check if this is a cash or bank ledger
+        const isCash = ledger.name && ledger.name.toLowerCase() === 'cash';
+        const isBank = ledger.name && ledger.name.toLowerCase().includes('bank');
+        
+        // If it's cash or bank and doesn't have a group, set to current_asset
+        if ((isCash || isBank) && (!ledger.group || ledger.group === '')) {
+            ledger.group = 'current_asset';
+            updated = true;
+            console.log(`Updated: ${ledger.name} -> current_asset`);
+        }
+    });
+    
+    if (updated) {
+        localStorage.setItem('ledgers', JSON.stringify(ledgers));
+        console.log('Migration complete! Updated ledgers saved to localStorage.');
+        
+        // Optional: Show a notification to the user
+        setTimeout(() => {
+            alert('Cash and Bank accounts have been updated to "Current Asset" subgroup.');
+        }, 1000);
+    } else {
+        console.log('No ledgers needed updating.');
+    }
+}
+
+// Run the migration automatically when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Small delay to ensure everything is loaded
+    setTimeout(() => {
+        // Only run if there are ledgers and the migration hasn't been run before
+        if (typeof ledgers !== 'undefined' && ledgers && ledgers.length > 0 && 
+            !localStorage.getItem('subgroup_migration_complete')) {
+            migrateLedgerSubgroups();
+            localStorage.setItem('subgroup_migration_complete', 'true');
+        }
+    }, 500);
+});

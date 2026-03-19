@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Viewer - Khoium's Accounting</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --main-color: #3c40c6;
+            --secondary-color: #009432;
+            --white: #fff;
+            --black: #444;
+            --light-color: #666;
+            --bg-color: #f4faff;
+            --border: 1px solid rgba(0,0,0,.2);
+            --box-shadow: 0 5px 10px rgba(0,0,0,.1);
+        }
+
+        body {
+            background: var(--bg-color);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--black);
+        }
+
+        .header h1 i {
+            color: var(--main-color);
+            margin-right: 1rem;
+        }
+
+        .back-btn {
+            background: var(--main-color);
+            color: var(--white);
+            padding: 1rem 2rem;
+            border-radius: .5rem;
+            text-decoration: none;
+            font-size: 1.6rem;
+            transition: all .3s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 3rem;
+            color: var(--main-color);
+            margin-bottom: 1rem;
+        }
+
+        .stat-card .label {
+            font-size: 1.4rem;
+            color: var(--light-color);
+            margin-bottom: .5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2.4rem;
+            font-weight: bold;
+            color: var(--black);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 1.2rem 2.5rem;
+            font-size: 1.6rem;
+            background: var(--white);
+            border: var(--border);
+            border-radius: .5rem;
+            cursor: pointer;
+            transition: all .3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .tab-btn i {
+            color: var(--main-color);
+        }
+
+        .tab-btn:hover {
+            background: var(--main-color);
+            color: var(--white);
+        }
+
+        .tab-btn:hover i {
+            color: var(--white);
+        }
+
+        .tab-btn.active {
+            background: var(--main-color);
+            color: var(--white);
+        }
+
+        .tab-btn.active i {
+            color: var(--white);
+        }
+
+        .data-section {
+            display: none;
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+        }
+
+        .data-section.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--main-color);
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+            color: var(--black);
+        }
+
+        .section-header h2 i {
+            color: var(--main-color);
+            margin-right: 1rem;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1.4rem;
+            border: none;
+            border-radius: .5rem;
+            cursor: pointer;
+            transition: all .3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .btn-primary {
+            background: var(--main-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #2a2e8c;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            background: #007a28;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #bb2d3b;
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            margin-bottom: 2rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 1.2rem;
+            font-size: 1.6rem;
+            border: var(--border);
+            border-radius: .5rem;
+            background: var(--bg-color);
+        }
+
+        .search-box input:focus {
+            border-color: var(--main-color);
+            outline: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.4rem;
+        }
+
+        th {
+            background: var(--main-color);
+            color: var(--white);
+            padding: 1.2rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: var(--border);
+            color: var(--black);
+        }
+
+        tr:hover {
+            background: var(--bg-color);
+        }
+
+        .subgroup-badge {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 1.2rem;
+            display: inline-block;
+        }
+
+        .type-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .type-payment {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .type-receipt {
+            background: #28a745;
+            color: white;
+        }
+
+        .type-journal {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .json-viewer {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 2rem;
+            border-radius: .5rem;
+            font-family: monospace;
+            font-size: 1.4rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--bg-color);
+            padding: 1.5rem;
+            border-radius: .5rem;
+        }
+
+        .summary-card h3 {
+            font-size: 1.8rem;
+            color: var(--main-color);
+            margin-bottom: 1rem;
+        }
+
+        .summary-card ul {
+            list-style: none;
+        }
+
+        .summary-card li {
+            font-size: 1.4rem;
+            padding: .5rem 0;
+            border-bottom: 1px dashed #ddd;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-database"></i>
+                Accounting Data Viewer
+            </h1>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-exchange-alt"></i>
+                <div class="label">Total Transactions</div>
+                <div class="value" id="total-transactions">0</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-layer-group"></i>
+                <div class="label">Total Subgroups</div>
+                <div class="value" id="total-subgroups">0</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-book"></i>
+                <div class="label">Total Ledgers</div>
+                <div class="value" id="total-ledgers">0</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-university"></i>
+                <div class="label">Total Banks</div>
+                <div class="value" id="total-banks">0</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('transactions')">
+                <i class="fas fa-list"></i> All Transactions
+            </button>
+            <button class="tab-btn" onclick="switchTab('subgroups')">
+                <i class="fas fa-layer-group"></i> Subgroups
+            </button>
+            <button class="tab-btn" onclick="switchTab('ledgers')">
+                <i class="fas fa-book"></i> Ledgers
+            </button>
+            <button class="tab-btn" onclick="switchTab('banks')">
+                <i class="fas fa-university"></i> Banks
+            </button>
+            <button class="tab-btn" onclick="switchTab('json')">
+                <i class="fas fa-code"></i> Raw JSON
+            </button>
+        </div>
+
+        <!-- Transactions Section -->
+        <div id="transactions-section" class="data-section active">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> All Transactions</h2>
+                <div class="action-btns">
+                    <button class="btn btn-success" onclick="exportToCSV('transactions')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <button class="btn btn-primary" onclick="copyToClipboard('transactions')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="transaction-search" placeholder="Search transactions..." onkeyup="filterTransactions()">
+            </div>
+
+            <div class="table-container">
+                <table id="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Voucher</th>
+                            <th>Type</th>
+                            <th>Ledger</th>
+                            <th>Subgroup</th>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Bank</th>
+                            <th>Narration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-body">
+                        <tr><td colspan="10">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Subgroups Section -->
+        <div id="subgroups-section" class="data-section">
+            <div class="section-header">
+                <h2><i class="fas fa-layer-group"></i> Subgroups Summary</h2>
+                <div class="action-btns">
+                    <button class="btn btn-success" onclick="exportToCSV('subgroups')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="summary-grid" id="subgroups-summary">
+                <!-- Will be filled by JavaScript -->
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subgroup</th>
+                            <th>Count</th>
+                            <th>Ledgers</th>
+                            <th>Total Debit</th>
+                            <th>Total Credit</th>
+                            <th>Net Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subgroups-body">
+                        <tr><td colspan="6">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Ledgers Section -->
+        <div id="ledgers-section" class="data-section">
+            <div class="section-header">
+                <h2><i class="fas fa-book"></i> Ledgers</h2>
+                <div class="action-btns">
+                    <button class="btn btn-success" onclick="exportToCSV('ledgers')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Group</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgers-body">
+                        <tr><td colspan="5">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Banks Section -->
+        <div id="banks-section" class="data-section">
+            <div class="section-header">
+                <h2><i class="fas fa-university"></i> Banks</h2>
+                <div class="action-btns">
+                    <button class="btn btn-success" onclick="exportToCSV('banks')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Display Name</th>
+                            <th>Account No</th>
+                        </tr>
+                    </thead>
+                    <tbody id="banks-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- JSON Section -->
+        <div id="json-section" class="data-section">
+            <div class="section-header">
+                <h2><i class="fas fa-code"></i> Raw JSON Data</h2>
+                <div class="action-btns">
+                    <button class="btn btn-primary" onclick="copyRawJSON()">
+                        <i class="fas fa-copy"></i> Copy JSON
+                    </button>
+                    <button class="btn btn-success" onclick="downloadJSON()">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+            </div>
+            <div class="json-viewer" id="json-viewer">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/accounting.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        // Switch between tabs
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Show selected section
+            document.querySelectorAll('.data-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(`${tabName}-section`).classList.add('active');
+            
+            // Load data for the tab
+            if (tabName === 'transactions') loadTransactions();
+            else if (tabName === 'subgroups') loadSubgroups();
+            else if (tabName === 'ledgers') loadLedgers();
+            else if (tabName === 'banks') loadBanks();
+            else if (tabName === 'json') loadJSON();
+        }
+
+        // Load all transactions
+        function loadTransactions() {
+            const tbody = document.getElementById('transactions-body');
+            if (!transactions || transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No transactions found</td></tr>';
+                updateStats();
+                return;
+            }
+
+            let html = '';
+            transactions.slice().reverse().forEach(t => {
+                html += `
+                    <tr>
+                        <td>${t.id}</td>
+                        <td>${t.date}</td>
+                        <td>${t.voucher || '-'}</td>
+                        <td><span class="type-badge type-${t.type}">${t.type}</span></td>
+                        <td>${t.ledger}</td>
+                        <td>${t.subgroup ? `<span class="subgroup-badge">${t.subgroup}</span>` : '-'}</td>
+                        <td>${t.debit ? t.debit.toFixed(2) : '-'}</td>
+                        <td>${t.credit ? t.credit.toFixed(2) : '-'}</td>
+                        <td>${t.bank_name || '-'}</td>
+                        <td>${t.narration ? t.narration.substring(0, 30) + '...' : '-'}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            updateStats();
+        }
+
+        // Load subgroups summary
+        function loadSubgroups() {
+            const subgroups = {};
+            transactions.forEach(t => {
+                if (t.subgroup) {
+                    if (!subgroups[t.subgroup]) {
+                        subgroups[t.subgroup] = {
+                            count: 0,
+                            ledgers: new Set(),
+                            debit: 0,
+                            credit: 0
+                        };
+                    }
+                    subgroups[t.subgroup].count++;
+                    subgroups[t.subgroup].ledgers.add(t.ledger);
+                    subgroups[t.subgroup].debit += t.debit || 0;
+                    subgroups[t.subgroup].credit += t.credit || 0;
+                }
+            });
+
+            // Summary cards
+            const summaryGrid = document.getElementById('subgroups-summary');
+            let summaryHTML = '';
+            Object.keys(subgroups).forEach(subgroup => {
+                const data = subgroups[subgroup];
+                const net = data.debit - data.credit;
+                summaryHTML += `
+                    <div class="summary-card">
+                        <h3>${subgroup}</h3>
+                        <ul>
+                            <li><span>Transactions:</span> <strong>${data.count}</strong></li>
+                            <li><span>Ledgers:</span> <strong>${data.ledgers.size}</strong></li>
+                            <li><span>Total Debit:</span> <strong>${data.debit.toFixed(2)}</strong></li>
+                            <li><span>Total Credit:</span> <strong>${data.credit.toFixed(2)}</strong></li>
+                            <li><span>Net Balance:</span> <strong style="color: ${net >= 0 ? '#28a745' : '#dc3545'}">${net.toFixed(2)}</strong></li>
+                        </ul>
+                    </div>
+                `;
+            });
+            summaryGrid.innerHTML = summaryHTML || '<p>No subgroups found</p>';
+
+            // Table
+            const tbody = document.getElementById('subgroups-body');
+            let tableHTML = '';
+            Object.keys(subgroups).sort().forEach(subgroup => {
+                const data = subgroups[subgroup];
+                const net = data.debit - data.credit;
+                tableHTML += `
+                    <tr>
+                        <td><strong>${subgroup}</strong></td>
+                        <td>${data.count}</td>
+                        <td>${data.ledgers.size}</td>
+                        <td>${data.debit.toFixed(2)}</td>
+                        <td>${data.credit.toFixed(2)}</td>
+                        <td style="color: ${net >= 0 ? '#28a745' : '#dc3545'}">${net.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = tableHTML || '<tr><td colspan="6">No subgroups found</td></tr>';
+        }
+
+        // Load ledgers
+        function loadLedgers() {
+            const tbody = document.getElementById('ledgers-body');
+            if (!ledgers || ledgers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No ledgers found</td></tr>';
+                return;
+            }
+
+            let html = '';
+            ledgers.forEach(l => {
+                html += `
+                    <tr>
+                        <td>${l.id}</td>
+                        <td>${l.name}</td>
+                        <td>${l.type}</td>
+                        <td>${l.category || '-'}</td>
+                        <td>${l.group || '-'}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Load banks
+        function loadBanks() {
+            const tbody = document.getElementById('banks-body');
+            if (!banks || banks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">No banks found</td></tr>';
+                return;
+            }
+
+            let html = '';
+            banks.forEach(b => {
+                html += `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.name}</td>
+                        <td>${b.displayName || '-'}</td>
+                        <td>${b.accountNo || '-'}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Load JSON
+        function loadJSON() {
+            const data = {
+                transactions: transactions,
+                ledgers: ledgers,
+                banks: banks,
+                stats: {
+                    total_transactions: transactions.length,
+                    total_ledgers: ledgers.length,
+                    total_banks: banks.length,
+                    total_subgroups: new Set(transactions.map(t => t.subgroup).filter(Boolean)).size
+                }
+            };
+            document.getElementById('json-viewer').textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('total-transactions').textContent = transactions.length;
+            document.getElementById('total-subgroups').textContent = new Set(transactions.map(t => t.subgroup).filter(Boolean)).size;
+            document.getElementById('total-ledgers').textContent = ledgers.length;
+            document.getElementById('total-banks').textContent = banks.length;
+        }
+
+        // Filter transactions
+        function filterTransactions() {
+            const search = document.getElementById('transaction-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#transactions-body tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        }
+
+        // Export to CSV
+        function exportToCSV(type) {
+            let csv = '';
+            let filename = '';
+            
+            if (type === 'transactions') {
+                csv = 'ID,Date,Voucher,Type,Ledger,Subgroup,Debit,Credit,Bank,Narration\n';
+                transactions.forEach(t => {
+                    csv += `${t.id},${t.date},${t.voucher || ''},${t.type},${t.ledger},${t.subgroup || ''},${t.debit || 0},${t.credit || 0},${t.bank_name || ''},"${t.narration || ''}"\n`;
+                });
+                filename = 'transactions.csv';
+            } else if (type === 'subgroups') {
+                csv = 'Subgroup,Count,Ledgers,Total Debit,Total Credit,Net Balance\n';
+                const subgroups = {};
+                transactions.forEach(t => {
+                    if (t.subgroup) {
+                        if (!subgroups[t.subgroup]) subgroups[t.subgroup] = { count:0, ledgers:new Set(), debit:0, credit:0 };
+                        subgroups[t.subgroup].count++;
+                        subgroups[t.subgroup].ledgers.add(t.ledger);
+                        subgroups[t.subgroup].debit += t.debit || 0;
+                        subgroups[t.subgroup].credit += t.credit || 0;
+                    }
+                });
+                Object.keys(subgroups).forEach(s => {
+                    const data = subgroups[s];
+                    const net = data.debit - data.credit;
+                    csv += `${s},${data.count},${data.ledgers.size},${data.debit.toFixed(2)},${data.credit.toFixed(2)},${net.toFixed(2)}\n`;
+                });
+                filename = 'subgroups.csv';
+            }
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(type) {
+            let text = '';
+            if (type === 'transactions') {
+                text = JSON.stringify(transactions, null, 2);
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+
+        function copyRawJSON() {
+            const data = {
+                transactions: transactions,
+                ledgers: ledgers,
+                banks: banks
+            };
+            navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+                alert('JSON copied to clipboard!');
+            });
+        }
+
+        function downloadJSON() {
+            const data = {
+                transactions: transactions,
+                ledgers: ledgers,
+                banks: banks
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `accounting-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                loadTransactions();
+                updateStats();
+            }, 500);
+        });
+    </script>
+    <script>
+    // Safety checks for all pages
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ensure transactions array exists
+        if (typeof transactions === 'undefined') {
+            window.transactions = [];
+        }
+        
+        // Ensure ledgers array exists
+        if (typeof ledgers === 'undefined') {
+            window.ledgers = [];
+        }
+        
+        // Ensure banks array exists
+        if (typeof banks === 'undefined') {
+            window.banks = [];
+        }
+        
+        // Ensure customSubGroups array exists
+        if (typeof customSubGroups === 'undefined') {
+            window.customSubGroups = [];
+        }
+        
+        console.log('Safety checks completed');
+    });
+</script>
+</body>
+</html>

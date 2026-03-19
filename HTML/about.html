@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Khoium's Accounting</title>
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- custom css file link -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/accounting.css">
+
+    <style>
+        .about-section {
+            padding: 5rem 2rem;
+            background: var(--white);
+            border-radius: 1rem;
+            box-shadow: var(--box-shadow);
+            margin: 3rem auto;
+            max-width: 1200px;
+        }
+        
+        .about-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .about-header h1 {
+            font-size: 4rem;
+            color: var(--black);
+            margin-bottom: 1rem;
+        }
+        
+        .about-header h1 span {
+            color: var(--main-color);
+        }
+        
+        .about-header p {
+            font-size: 1.8rem;
+            color: var(--light-color);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin: 4rem 0;
+        }
+        
+        .about-card {
+            background: var(--bg-color);
+            padding: 3rem 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .about-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .about-card i {
+            font-size: 4rem;
+            color: var(--main-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .about-card h3 {
+            font-size: 2.2rem;
+            color: var(--black);
+            margin-bottom: 1rem;
+        }
+        
+        .about-card p {
+            font-size: 1.5rem;
+            color: var(--light-color);
+            line-height: 1.8;
+        }
+        
+        .mission-vision {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+            margin: 4rem 0;
+        }
+        
+        .mission-box, .vision-box {
+            background: linear-gradient(135deg, var(--main-color), var(--secondary-color));
+            padding: 3rem;
+            border-radius: 1rem;
+            color: var(--white);
+        }
+        
+        .mission-box h2, .vision-box h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .mission-box p, .vision-box p {
+            font-size: 1.6rem;
+            line-height: 1.8;
+            opacity: 0.95;
+        }
+        
+        .team-section {
+            margin: 5rem 0;
+        }
+        
+        .team-section h2 {
+            font-size: 3rem;
+            color: var(--black);
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .team-section h2 span {
+            color: var(--main-color);
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+        }
+        
+        .team-member {
+            text-align: center;
+        }
+        
+        .team-member img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--main-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .team-member h3 {
+            font-size: 2rem;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+        }
+        
+        .team-member p {
+            font-size: 1.4rem;
+            color: var(--light-color);
+            margin-bottom: 1rem;
+        }
+        
+        .team-member .social-links a {
+            display: inline-block;
+            width: 3.5rem;
+            height: 3.5rem;
+            line-height: 3.5rem;
+            border-radius: 50%;
+            background: var(--bg-color);
+            color: var(--main-color);
+            margin: 0 0.3rem;
+            transition: all 0.3s ease;
+        }
+        
+        .team-member .social-links a:hover {
+            background: var(--main-color);
+            color: var(--white);
+            transform: translateY(-3px);
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            margin: 5rem 0;
+            padding: 3rem;
+            background: var(--bg-color);
+            border-radius: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-item .number {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: var(--main-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-item .label {
+            font-size: 1.4rem;
+            color: var(--light-color);
+            text-transform: uppercase;
+        }
+        
+        @media (max-width: 768px) {
+            .mission-vision {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .about-header h1 {
+                font-size: 3rem;
+            }
+        }
+        
+        @media (max-width: 450px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- header section starts -->
+    <header class="header">
+        <section class="flex">
+            <a href="index.html" class="logo"> <i class="fas fa-calculator"></i> Khoium's Accounting</a>
+
+            <nav class="navbar">
+                <ul>
+                    <li><a href="index.html">home</a></li>
+                    <li><a href="about.html" class="active">about</a></li>
+                    <li><a href="index.html#payment">accounting</a></li>
+                    <li><a href="#">reports <i class="fas fa-angle-down"></i></a>
+                        <ul>
+                            <li><a href="ledger.html">ledger</a></li>
+                            <li><a href="trial-balance.html">trial balance</a></li>
+                            <li><a href="profit-loss.html">profit & loss</a></li>
+                            <li><a href="balance-sheet.html">balance sheet</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="contact.html">contact</a></li>
+                </ul>
+            </nav>
+
+            <div id="menu-btn" class="fas fa-bars-staggered"></div>
+
+        </section>
+    </header>
+    <!-- header section ends -->
+
+    <!-- about section starts -->
+    <section class="about-section">
+        <div class="about-header">
+            <h1>about <span>khoium's accounting</span></h1>
+            <p>Your trusted partner for professional accounting software solutions since 2020</p>
+        </div>
+        
+        <div class="about-grid">
+            <div class="about-card">
+                <i class="fas fa-bullseye"></i>
+                <h3>Our Mission</h3>
+                <p>To simplify accounting for businesses of all sizes with intuitive, powerful, and accessible software solutions.</p>
+            </div>
+            
+            <div class="about-card">
+                <i class="fas fa-eye"></i>
+                <h3>Our Vision</h3>
+                <p>To become the leading accounting platform in Bangladesh, empowering thousands of businesses with financial clarity.</p>
+            </div>
+            
+            <div class="about-card">
+                <i class="fas fa-hand-holding-heart"></i>
+                <h3>Our Values</h3>
+                <p>Integrity, innovation, and customer success drive everything we do at Khoium's Accounting.</p>
+            </div>
+        </div>
+        
+        <div class="mission-vision">
+            <div class="mission-box">
+                <h2><i class="fas fa-rocket"></i> Our Story</h2>
+                <p>Founded in 2020, Khoium's Accounting began with a simple idea: make double-entry accounting accessible to everyone. What started as a small project has grown into a comprehensive accounting solution used by businesses across Bangladesh. Our software combines traditional accounting principles with modern technology to deliver accurate, real-time financial insights.</p>
+            </div>
+            
+            <div class="vision-box">
+                <h2><i class="fas fa-chart-line"></i> Why Choose Us</h2>
+                <p>✓ Double-entry accounting system<br>
+                   ✓ Comprehensive reporting (Ledger, Trial Balance, P&L, Balance Sheet)<br>
+                   ✓ Bank and cash management<br>
+                   ✓ Subgroup classification for detailed analysis<br>
+                   ✓ User-friendly interface with keyboard navigation<br>
+                   ✓ Free and open for all businesses</p>
+            </div>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="number" id="stat-transactions">0</div>
+                <div class="label">Transactions</div>
+            </div>
+            <div class="stat-item">
+                <div class="number" id="stat-ledgers">0</div>
+                <div class="label">Ledgers</div>
+            </div>
+            <div class="stat-item">
+                <div class="number" id="stat-banks">0</div>
+                <div class="label">Banks</div>
+            </div>
+            <div class="stat-item">
+                <div class="number" id="stat-users">500+</div>
+                <div class="label">Users</div>
+            </div>
+        </div>
+        
+        <div class="team-section">
+            <h2>our <span>team</span></h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <img src="https://ui-avatars.com/api/?name=Khoium+Dev&background=3c40c6&color=fff&size=150" alt="Team Member">
+                    <h3>Khoium Ambia</h3>
+                    <p>Founder & Lead Developer</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                
+                <div class="team-member">
+                    <img src="https://ui-avatars.com/api/?name=Accounting+Team&background=009432&color=fff&size=150" alt="Team Member">
+                    <h3>Accounting Team</h3>
+                    <p>Financial Experts</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                
+                <div class="team-member">
+                    <img src="https://ui-avatars.com/api/?name=Support+Team&background=3c40c6&color=fff&size=150" alt="Team Member">
+                    <h3>Support Team</h3>
+                    <p>Customer Success</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- about section ends -->
+
+    <!-- footer section starts -->
+    <footer class="footer">
+        <section>
+            <div class="share">
+                <a href="#" class="fab fa-facebook-f"></a>
+                <a href="#" class="fab fa-twitter"></a>
+                <a href="#" class="fab fa-linkedin"></a>
+                <a href="#" class="fab fa-instagram"></a>
+                <a href="#" class="fab fa-youtube"></a>
+            </div>
+            <div class="credit">&copy; 2026 Khoium's Accounting. All rights reserved.</div>
+        </section>
+    </footer>
+    <!-- footer section ends -->
+
+    <!-- custom js file link -->
+    <script src="js/script.js"></script>
+    <script src="js/accounting.js"></script>
+    <script src="js/utils.js"></script>
+    
+    <script>
+        // Update stats from accounting data
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof transactions !== 'undefined') {
+                document.getElementById('stat-transactions').textContent = transactions.length;
+            }
+            if (typeof ledgers !== 'undefined') {
+                document.getElementById('stat-ledgers').textContent = ledgers.length;
+            }
+            if (typeof banks !== 'undefined') {
+                document.getElementById('stat-banks').textContent = banks.length;
+            }
+        });
+    </script>
+    <script>
+    // Safety checks for all pages
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ensure transactions array exists
+        if (typeof transactions === 'undefined') {
+            window.transactions = [];
+        }
+        
+        // Ensure ledgers array exists
+        if (typeof ledgers === 'undefined') {
+            window.ledgers = [];
+        }
+        
+        // Ensure banks array exists
+        if (typeof banks === 'undefined') {
+            window.banks = [];
+        }
+        
+        // Ensure customSubGroups array exists
+        if (typeof customSubGroups === 'undefined') {
+            window.customSubGroups = [];
+        }
+        
+        console.log('Safety checks completed');
+    });
+</script>
+</body>
+</html>

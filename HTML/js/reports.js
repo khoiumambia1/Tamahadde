@@ -4,6 +4,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     initReportDatePickers();
     loadLedgersForSelector();
+    loadSubGroupsForSelector(); // New: Load subgroups for filtering
 });
 
 function initReportDatePickers() {
@@ -16,72 +17,138 @@ function initReportDatePickers() {
     });
 }
 
+// Load ledgers for selector (add this to reports.js if not already there)
 function loadLedgersForSelector() {
     const ledgerSelect = document.getElementById('ledger-select');
     if (!ledgerSelect) return;
     
     let options = '<option value="">-- Select Ledger --</option>';
     
-    // Get all unique ledgers from transactions (global transactions variable)
-    const uniqueLedgers = [...new Set(transactions.map(t => t.ledger))];
-    
-    uniqueLedgers.sort().forEach(ledger => {
-        options += `<option value="${ledger}">${ledger}</option>`;
-    });
+    if (typeof transactions !== 'undefined' && transactions.length > 0) {
+        const uniqueLedgers = [...new Set(transactions.map(t => t.ledger))];
+        uniqueLedgers.sort().forEach(ledger => {
+            options += `<option value="${ledger}">${ledger}</option>`;
+        });
+    }
     
     ledgerSelect.innerHTML = options;
 }
 
-function loadLedgerReport() {
-    const fromDate = document.getElementById('from-date')?.value;
-    const toDate = document.getElementById('to-date')?.value;
-    const selectedLedger = document.getElementById('ledger-select')?.value;
+// ==================== NEW SUBGROUP FUNCTIONS ====================
+
+/**
+ * Load subgroups into selector dropdown
+ */
+function loadSubGroupsForSelector() {
+    const subgroupSelect = document.getElementById('subgroup-select');
+    if (!subgroupSelect) return;
     
-    if (!selectedLedger) {
-        alert('Please select a ledger');
-        return;
-    }
+    let options = '<option value="">-- Select Subgroup --</option>';
     
-    // Filter transactions for selected ledger and date range
-    let filteredTransactions = transactions.filter(t => t.ledger === selectedLedger);
+    // Get all unique subgroups from transactions
+    const uniqueSubGroups = [...new Set(transactions.map(t => t.subgroup).filter(Boolean))];
     
-    if (fromDate) {
-        filteredTransactions = filteredTransactions.filter(t => t.date >= fromDate);
-    }
-    if (toDate) {
-        filteredTransactions = filteredTransactions.filter(t => t.date <= toDate);
-    }
+    uniqueSubGroups.sort().forEach(subgroup => {
+        options += `<option value="${subgroup}">${subgroup}</option>`;
+    });
     
+    subgroupSelect.innerHTML = options;
+}
+
+/**
+ * Get subgroup summary from transactions
+ * @param {Array} transactionsList - Array of transactions
+ * @returns {Object} Subgroup summary
+ */
+function getSubgroupSummary(transactionsList) {
+    const summary = {};
+    
+    transactionsList.forEach(t => {
+        if (t.subgroup) {
+            if (!summary[t.subgroup]) {
+                summary[t.subgroup] = {
+                    count: 0,
+                    total_debit: 0,
+                    total_credit: 0,
+                    net_amount: 0,
+                    ledgers: new Set(),
+                    transactions: []
+                };
+            }
+            summary[t.subgroup].count++;
+            summary[t.subgroup].total_debit += t.debit || 0;
+            summary[t.subgroup].total_credit += t.credit || 0;
+            summary[t.subgroup].net_amount += (t.debit || 0) - (t.credit || 0);
+            if (t.ledger) summary[t.subgroup].ledgers.add(t.ledger);
+            summary[t.subgroup].transactions.push(t);
+        }
+    });
+    
+    // Convert Sets to Arrays for JSON serialization
+    Object.keys(summary).forEach(key => {
+        summary[key].ledgers = Array.from(summary[key].ledgers);
+    });
+    
+    return summary;
+}
+
+/**
+ * Filter transactions by subgroup
+ * @param {string} subgroup - Subgroup to filter by
+ * @returns {Array} Filtered transactions
+ */
+function filterBySubgroup(subgroup) {
+    if (!subgroup) return transactions;
+    return transactions.filter(t => t.subgroup === subgroup);
+}
+
+/**
+ * Generate subgroup report HTML
+ * @param {Array} filteredTransactions - Transactions to display
+ * @param {string} subgroupName - Subgroup name
+ * @param {string} fromDate - From date
+ * @param {string} toDate - To date
+ * @returns {string} HTML report
+ */
+function generateSubgroupReport(filteredTransactions, subgroupName, fromDate, toDate) {
     if (filteredTransactions.length === 0) {
-        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found for this period</div>';
-        return;
+        return '<div class="loading">No transactions found for this subgroup</div>';
     }
     
     // Sort by date
     filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // Calculate opening balance (all transactions before fromDate)
-    let openingBalance = 0;
-    if (fromDate) {
-        const previousTransactions = transactions.filter(t => 
-            t.ledger === selectedLedger && t.date < fromDate
-        );
-        previousTransactions.forEach(t => {
-            openingBalance += (t.debit - t.credit);
-        });
-    }
+    let runningBalance = 0;
+    let totalDebit = 0;
+    let totalCredit = 0;
     
-    // Generate report HTML
     let reportHTML = `
         <div class="report-header">
-            <h2>${selectedLedger} Ledger</h2>
-            <p>Period: ${fromDate || 'Start'} to ${toDate || 'Today'}</p>
+            <h2>Subgroup Report: ${subgroupName}</h2>
+            <p>As of: ${formatDate(asOfDate)}</p>
         </div>
+        
+        <div class="subgroup-stats" style="background: var(--bg-color); padding: 1.5rem; border-radius: .5rem; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--main-color);">Summary</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <strong>Total Transactions:</strong> ${filteredTransactions.length}
+                </div>
+                <div>
+                    <strong>Unique Ledgers:</strong> ${new Set(filteredTransactions.map(t => t.ledger)).size}
+                </div>
+                <div>
+                    <strong>Date Range:</strong> ${filteredTransactions[0]?.date || '-'} to ${filteredTransactions[filteredTransactions.length-1]?.date || '-'}
+                </div>
+            </div>
+        </div>
+        
         <table class="report-table">
             <thead>
                 <tr>
                     <th>Date</th>
                     <th>Voucher</th>
+                    <th>Ledger</th>
                     <th>Description</th>
                     <th>Debit</th>
                     <th>Credit</th>
@@ -91,31 +158,16 @@ function loadLedgerReport() {
             <tbody>
     `;
     
-    let runningBalance = openingBalance;
-    let totalDebit = 0;
-    let totalCredit = 0;
-    
-    // Show opening balance row
-    if (fromDate) {
-        reportHTML += `
-            <tr>
-                <td colspan="3"><strong>Opening Balance</strong></td>
-                <td></td>
-                <td></td>
-                <td><strong>${openingBalance.toFixed(2)}</strong></td>
-            </tr>
-        `;
-    }
-    
     filteredTransactions.forEach(t => {
         runningBalance += (t.debit - t.credit);
-        totalDebit += t.debit;
-        totalCredit += t.credit;
+        totalDebit += t.debit || 0;
+        totalCredit += t.credit || 0;
         
         reportHTML += `
             <tr>
                 <td>${t.date}</td>
-                <td>${t.voucher}</td>
+                <td>${t.voucher || '-'}</td>
+                <td>${t.ledger || '-'}</td>
                 <td>${t.narration || '-'}</td>
                 <td>${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
                 <td>${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
@@ -128,10 +180,264 @@ function loadLedgerReport() {
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="3"><strong>Total</strong></td>
+                    <td colspan="4"><strong>Total</strong></td>
                     <td><strong>${totalDebit.toFixed(2)}</strong></td>
                     <td><strong>${totalCredit.toFixed(2)}</strong></td>
                     <td><strong>${runningBalance.toFixed(2)}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+    
+    return reportHTML;
+}
+
+// ==================== NEW SUBGROUP REPORT FUNCTION ====================
+
+/**
+ * Load subgroup report
+ */
+function loadSubgroupReport() {
+    const fromDate = document.getElementById('from-date')?.value;
+    const toDate = document.getElementById('to-date')?.value;
+    const selectedSubgroup = document.getElementById('subgroup-select')?.value;
+    
+    if (!selectedSubgroup) {
+        alert('Please select a subgroup');
+        return;
+    }
+    
+    // Filter transactions for selected subgroup and date range
+    let filteredTransactions = transactions.filter(t => t.subgroup === selectedSubgroup);
+    
+    if (fromDate) {
+        filteredTransactions = filteredTransactions.filter(t => t.date >= fromDate);
+    }
+    if (toDate) {
+        filteredTransactions = filteredTransactions.filter(t => t.date <= toDate);
+    }
+    
+    const reportHTML = generateSubgroupReport(filteredTransactions, selectedSubgroup, fromDate, toDate);
+    document.getElementById('report-content').innerHTML = reportHTML;
+}
+
+/**
+ * Load all subgroups summary
+ */
+function loadAllSubgroupsSummary() {
+    const fromDate = document.getElementById('from-date')?.value;
+    const toDate = document.getElementById('to-date')?.value;
+    
+    // Filter transactions by date range
+    let filteredTransactions = transactions;
+    if (fromDate) {
+        filteredTransactions = filteredTransactions.filter(t => t.date >= fromDate);
+    }
+    if (toDate) {
+        filteredTransactions = filteredTransactions.filter(t => t.date <= toDate);
+    }
+    
+    const subgroupSummary = getSubgroupSummary(filteredTransactions);
+    
+    if (Object.keys(subgroupSummary).length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No subgroup transactions found</div>';
+        return;
+    }
+    
+    let reportHTML = `
+        <div class="report-header">
+            <h2>All Subgroups Summary</h2>
+            <p>As of: ${formatDate(asOfDate)}</p>
+        </div>
+        
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Subgroup</th>
+                    <th>Transactions</th>
+                    <th>Ledgers</th>
+                    <th>Total Debit</th>
+                    <th>Total Credit</th>
+                    <th>Net Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    let grandTotalDebit = 0;
+    let grandTotalCredit = 0;
+    let grandTotalNet = 0;
+    
+    Object.keys(subgroupSummary).sort().forEach(subgroup => {
+        const data = subgroupSummary[subgroup];
+        grandTotalDebit += data.total_debit;
+        grandTotalCredit += data.total_credit;
+        grandTotalNet += data.net_amount;
+        
+        reportHTML += `
+            <tr>
+                <td><strong>${subgroup}</strong></td>
+                <td>${data.count}</td>
+                <td>${data.ledgers.length}</td>
+                <td>${formatNumber(data.total_debit)}</td>
+                <td>${formatNumber(data.total_credit)}</td>
+                <td class="${data.net_amount >= 0 ? 'positive' : 'negative'}">${formatNumber(data.net_amount)}</td>
+            </tr>
+        `;
+        
+        // Show individual ledgers in this subgroup (optional - can be commented out if too detailed)
+        if (data.ledgers.length > 0) {
+            data.ledgers.sort().forEach(ledger => {
+                const ledgerTransactions = data.transactions.filter(t => t.ledger === ledger);
+                const ledgerDebit = ledgerTransactions.reduce((sum, t) => sum + (t.debit || 0), 0);
+                const ledgerCredit = ledgerTransactions.reduce((sum, t) => sum + (t.credit || 0), 0);
+                const ledgerNet = ledgerDebit - ledgerCredit;
+                
+                reportHTML += `
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding-left: 3rem;">&nbsp;&nbsp;&nbsp;↳ ${ledger}</td>
+                        <td>${ledgerTransactions.length}</td>
+                        <td></td>
+                        <td>${formatNumber(ledgerDebit)}</td>
+                        <td>${formatNumber(ledgerCredit)}</td>
+                        <td class="${ledgerNet >= 0 ? 'positive' : 'negative'}">${formatNumber(ledgerNet)}</td>
+                    </tr>
+                `;
+            });
+        }
+    });
+    
+    reportHTML += `
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td><strong>Grand Total</strong></td>
+                    <td><strong>${transactions.length}</strong></td>
+                    <td><strong>${new Set(transactions.map(t => t.ledger)).size}</strong></td>
+                    <td><strong>${formatNumber(grandTotalDebit)}</strong></td>
+                    <td><strong>${formatNumber(grandTotalCredit)}</strong></td>
+                    <td><strong class="${grandTotalNet >= 0 ? 'positive' : 'negative'}">${formatNumber(grandTotalNet)}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+    
+    document.getElementById('report-content').innerHTML = reportHTML;
+}
+
+// ==================== EXISTING FUNCTIONS (UNCHANGED) ====================
+
+// ==================== LEDGER REPORT WITH AS OF DATE ====================
+function loadLedgerReport() {
+    const asOfDate = document.getElementById('as-of-date')?.value;
+    const selectedLedger = document.getElementById('ledger-select')?.value;
+    
+    if (!selectedLedger) {
+        alert('Please select a ledger');
+        return;
+    }
+    
+    if (!asOfDate) {
+        alert('Please select a date');
+        return;
+    }
+    
+    // Ensure transactions exists
+    if (typeof transactions === 'undefined' || transactions.length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found</div>';
+        return;
+    }
+    
+    // Calculate opening balance (all transactions before asOfDate)
+    let openingBalance = 0;
+    const allLedgerTransactions = transactions.filter(t => t.ledger === selectedLedger);
+    const previousTransactions = allLedgerTransactions.filter(t => t.date < asOfDate);
+    previousTransactions.forEach(t => {
+        openingBalance += (t.debit || 0) - (t.credit || 0);
+    });
+    
+    // Filter transactions up to asOfDate (including those on the date)
+    let filteredTransactions = allLedgerTransactions.filter(t => t.date <= asOfDate);
+    
+    if (filteredTransactions.length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found up to this date</div>';
+        return;
+    }
+    
+    // Sort by date
+    filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Get custom subgroups if available
+    const customSubGroups = window.customSubGroups || [];
+    
+    // Generate report HTML
+    let reportHTML = `
+        <div class="report-header">
+            <h2>${selectedLedger} Ledger</h2>
+            <p>As of: ${formatDate(asOfDate)}</p>
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Voucher</th>
+                    <th>Description</th>
+                    <th>Sub Group</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    // Show opening balance row
+    reportHTML += `
+        <tr class="opening-balance-row" style="background: #f0f0f0; font-weight: bold;">
+            <td colspan="4"><strong>Opening Balance (before ${formatDate(asOfDate)})</strong></td>
+            <td></td>
+            <td></td>
+            <td><strong>${openingBalance.toFixed(2)}</strong></td>
+        </tr>
+    `;
+    
+    let runningBalance = openingBalance;
+    let totalDebit = 0;
+    let totalCredit = 0;
+    
+    filteredTransactions.forEach(t => {
+        runningBalance += (t.debit || 0) - (t.credit || 0);
+        totalDebit += t.debit || 0;
+        totalCredit += t.credit || 0;
+        
+        // Get subgroup display
+        let subgroupDisplay = '-';
+        if (t.subgroup && t.subgroup !== '') {
+            const customSubGroup = customSubGroups.find(s => s.value === t.subgroup);
+            subgroupDisplay = customSubGroup ? customSubGroup.label : t.subgroup;
+        }
+        
+        reportHTML += `
+            <tr>
+                <td>${t.date}</td>
+                <td>${t.voucher || '-'}</td>
+                <td>${t.narration || '-'}</td>
+                <td>${subgroupDisplay !== '-' ? `<span class="subgroup-badge">${subgroupDisplay}</span>` : '-'}</td>
+                <td>${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
+                <td>${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
+                <td>${runningBalance.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+    
+    reportHTML += `
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="4"><strong>Total (Period)</strong></td>
+                    <td><strong>${totalDebit.toFixed(2)}</strong></td>
+                    <td><strong>${totalCredit.toFixed(2)}</strong></td>
+                    <td><strong>${(runningBalance - openingBalance).toFixed(2)}</strong></td>
                 </tr>
             </tfoot>
         </table>
@@ -142,12 +448,8 @@ function loadLedgerReport() {
                 <div class="value">${openingBalance.toFixed(2)}</div>
             </div>
             <div class="summary-item">
-                <div class="label">Total Debit</div>
-                <div class="value">${totalDebit.toFixed(2)}</div>
-            </div>
-            <div class="summary-item">
-                <div class="label">Total Credit</div>
-                <div class="value">${totalCredit.toFixed(2)}</div>
+                <div class="label">Period Net Change</div>
+                <div class="value">${(runningBalance - openingBalance).toFixed(2)}</div>
             </div>
             <div class="summary-item">
                 <div class="label">Closing Balance</div>
@@ -242,268 +544,297 @@ function loadTrialBalance() {
     document.getElementById('report-content').innerHTML = reportHTML;
 }
 
+// ==================== PROFIT & LOSS REPORT (SUBGROUP BASED) ====================
 function loadProfitLoss() {
-    const fromDate = document.getElementById('from-date')?.value;
-    const toDate = document.getElementById('to-date')?.value;
-    
-    if (!fromDate || !toDate) {
-        alert('Please select from and to dates');
+    const asOfDate = document.getElementById('as-of-date')?.value;
+
+    if (!asOfDate) {
+        alert('Please select a date');
         return;
     }
-    
-    // Filter transactions for date range
-    const filteredTransactions = transactions.filter(t => 
-        t.date >= fromDate && t.date <= toDate
-    );
-    
+
+    if (typeof transactions === 'undefined' || transactions.length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found</div>';
+        return;
+    }
+
+    // Filter transactions up to asOfDate
+    const filteredTransactions = transactions.filter(t => t.date <= asOfDate);
+
     if (filteredTransactions.length === 0) {
-        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found for this period</div>';
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions for selected date</div>';
         return;
     }
+
+    // Get custom subgroups
+    const customSubGroups = window.customSubGroups || [];
+
+    // Create maps for subgroup labels
+    const subgroupLabelMap = {};
     
-    // Access ledgers from global scope
-    const ledgers = window.ledgers || [];
+    // Add predefined subgroups
+    Object.keys(ledgerSubGroups).forEach(type => {
+        ledgerSubGroups[type].forEach(group => {
+            subgroupLabelMap[group.value] = group.label;
+        });
+    });
     
-    // Define P&L groups directly in the function to ensure they're available
-    const pnlGroups = {
-        income: [
-            { value: 'operating_revenue', label: 'Operating Revenue' },
-            { value: 'other_income', label: 'Other Income' },
-            { value: 'interest_income', label: 'Interest Income' },
-            { value: 'commission', label: 'Commission' }
-        ],
-        expense: [
-            { value: 'operating_expenses', label: 'Operating Expenses' },
-            { value: 'administrative', label: 'Administrative Expenses' },
-            { value: 'selling_distribution', label: 'Selling & Distribution' },
-            { value: 'financial_charges', label: 'Financial Charges' },
-            { value: 'depreciation', label: 'Depreciation' },
-            { value: 'staff_cost', label: 'Staff Cost' },
-            { value: 'rent_utilities', label: 'Rent & Utilities' },
-            { value: 'marketing', label: 'Marketing & Advertising' },
-            { value: 'travel_conveyance', label: 'Travel & Conveyance' },
-            { value: 'office_expenses', label: 'Office Expenses' },
-            { value: 'professional_fees', label: 'Professional Fees' },
-            { value: 'repairs_maintenance', label: 'Repairs & Maintenance' },
-            { value: 'insurance', label: 'Insurance' },
-            { value: 'taxes', label: 'Taxes' },
-            { value: 'miscellaneous', label: 'Miscellaneous' }
-        ]
-    };
-    
-    // Group income by P&L groups
-    const incomeByGroup = {};
-    const expenseByGroup = {};
-    let ungroupedIncome = 0;
-    let ungroupedExpenses = 0;
-    
+    // Add custom subgroups
+    customSubGroups.forEach(group => {
+        subgroupLabelMap[group.value] = group.label;
+    });
+
+    // Organize income by subgroup
+    const incomeBySubgroup = {};
+    // Organize expenses by subgroup
+    const expenseBySubgroup = {};
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    // Process each transaction
     filteredTransactions.forEach(t => {
-        // Find ledger info
-        const ledgerInfo = ledgers.find(l => l.name.toLowerCase() === t.ledger.toLowerCase());
-        
-        // Determine if this is income or expense based on transaction type and ledger type
-        const isIncome = (t.type === 'receipt' && t.credit > 0) || 
-                        (ledgerInfo?.type === 'income') ||
-                        (t.entry_type === 'receipt') ||
-                        (t.debit === 0 && t.credit > 0 && t.type === 'receipt');
-        
-        const isExpense = (t.type === 'payment' && t.debit > 0) || 
-                         (ledgerInfo?.type === 'expense') ||
-                         (t.entry_type === 'payment') ||
-                         (t.debit > 0 && t.credit === 0 && t.type === 'payment');
-        
-        if (isIncome) {
-            const amount = t.credit || t.debit || 0;
+        // Find ledger info to determine if income/expense
+        const ledgerInfo = ledgers ? ledgers.find(l => l.name === t.ledger) : null;
+        if (!ledgerInfo) return;
+
+        // Process income transactions (credit entries in income accounts)
+        if (ledgerInfo.type === 'income' && t.credit > 0) {
+            const amount = t.credit || 0;
+            const subgroup = t.subgroup || 'other_income';
             
-            if (ledgerInfo?.group) {
-                if (!incomeByGroup[ledgerInfo.group]) {
-                    const groupLabel = pnlGroups.income.find(g => g.value === ledgerInfo.group)?.label || ledgerInfo.group;
-                    incomeByGroup[ledgerInfo.group] = {
-                        label: groupLabel,
-                        total: 0,
-                        ledgers: []
-                    };
-                }
-                incomeByGroup[ledgerInfo.group].total += amount;
-                incomeByGroup[ledgerInfo.group].ledgers.push({
-                    name: t.ledger,
-                    amount: amount
-                });
-            } else {
-                ungroupedIncome += amount;
+            if (!incomeBySubgroup[subgroup]) {
+                incomeBySubgroup[subgroup] = {
+                    label: subgroupLabelMap[subgroup] || subgroup.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    ledgers: {},
+                    total: 0
+                };
             }
-        } else if (isExpense) {
-            const amount = t.debit || t.credit || 0;
             
-            if (ledgerInfo?.group) {
-                if (!expenseByGroup[ledgerInfo.group]) {
-                    const groupLabel = pnlGroups.expense.find(g => g.value === ledgerInfo.group)?.label || ledgerInfo.group;
-                    expenseByGroup[ledgerInfo.group] = {
-                        label: groupLabel,
-                        total: 0,
-                        ledgers: []
-                    };
-                }
-                expenseByGroup[ledgerInfo.group].total += amount;
-                expenseByGroup[ledgerInfo.group].ledgers.push({
-                    name: t.ledger,
-                    amount: amount
-                });
-            } else {
-                ungroupedExpenses += amount;
+            // Track by ledger within subgroup
+            if (!incomeBySubgroup[subgroup].ledgers[t.ledger]) {
+                incomeBySubgroup[subgroup].ledgers[t.ledger] = 0;
             }
+            incomeBySubgroup[subgroup].ledgers[t.ledger] += amount;
+            incomeBySubgroup[subgroup].total += amount;
+            totalIncome += amount;
+        }
+        
+        // Process expense transactions (debit entries in expense accounts)
+        else if (ledgerInfo.type === 'expense' && t.debit > 0) {
+            const amount = t.debit || 0;
+            const subgroup = t.subgroup || 'other_expense';
+            
+            if (!expenseBySubgroup[subgroup]) {
+                expenseBySubgroup[subgroup] = {
+                    label: subgroupLabelMap[subgroup] || subgroup.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    ledgers: {},
+                    total: 0
+                };
+            }
+            
+            // Track by ledger within subgroup
+            if (!expenseBySubgroup[subgroup].ledgers[t.ledger]) {
+                expenseBySubgroup[subgroup].ledgers[t.ledger] = 0;
+            }
+            expenseBySubgroup[subgroup].ledgers[t.ledger] += amount;
+            expenseBySubgroup[subgroup].total += amount;
+            totalExpense += amount;
         }
     });
-    
-    let totalIncome = ungroupedIncome;
-    let totalExpenses = ungroupedExpenses;
-    
-    let reportHTML = `
+
+    const netProfit = totalIncome - totalExpense;
+
+    // Generate report HTML
+    let html = `
         <div class="report-header">
-            <h2>Profit & Loss Statement</h2>
-            <p>Period: ${formatDate(fromDate)} to ${formatDate(toDate)}</p>
+            <h2 style="font-size: 2.4rem; color: var(--black); margin-bottom: 0.5rem;">Profit & Loss Statement</h2>
+            <p style="font-size: 1.4rem; color: var(--light-color); margin-bottom: 2rem;">As of: ${formatDate(asOfDate)}</p>
         </div>
     `;
-    
-    // INCOME SECTION WITH GROUPS
-    reportHTML += `
-        <h3 style="margin-top: 2rem;">Income</h3>
+
+    // ========== INCOME SECTION ==========
+    html += `
+        <h3 class="section-title">INCOME</h3>
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Particulars</th>
-                    <th style="text-align: right;">Amount</th>
+                    <th style="width: 70%;">Particulars</th>
+                    <th style="width: 30%; text-align: right;">Amount (${formatNumber(totalIncome)})</th>
                 </tr>
             </thead>
             <tbody>
     `;
-    
-    // Calculate total from groups
-    let groupedIncomeTotal = 0;
-    
-    // Show grouped income
-    Object.keys(incomeByGroup).sort().forEach(groupKey => {
-        const group = incomeByGroup[groupKey];
-        groupedIncomeTotal += group.total;
-        
-        reportHTML += `
-            <tr style="background-color: #f8f9fa; font-weight: bold;">
-                <td>${group.label}</td>
-                <td style="text-align: right;">${formatNumber(group.total)}</td>
+
+    // Sort income subgroups alphabetically
+    const sortedIncomeSubgroups = Object.keys(incomeBySubgroup).sort();
+
+    sortedIncomeSubgroups.forEach(subgroupKey => {
+        const subgroup = incomeBySubgroup[subgroupKey];
+        html += `
+            <tr class="group-header">
+                <td style="padding: 0.8rem; border-bottom: 1px solid #ddd;"><strong>${subgroup.label}</strong></td>
+                <td style="padding: 0.8rem; text-align: right; border-bottom: 1px solid #ddd;"><strong>${formatNumber(subgroup.total)}</strong></td>
             </tr>
         `;
-        
-        // Show individual ledgers in this group (indented)
-        group.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-            reportHTML += `
-                <tr>
-                    <td style="padding-left: 3rem;">&nbsp;&nbsp;&nbsp;↳ ${ledger.name}</td>
-                    <td style="text-align: right;">${formatNumber(ledger.amount)}</td>
-                </tr>
-            `;
+
+        // Show individual ledgers in this subgroup
+        Object.keys(subgroup.ledgers).sort().forEach(ledger => {
+            if (Math.abs(subgroup.ledgers[ledger]) > 0.01) {
+                html += `
+                    <tr class="ledger-row">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 4rem; border-bottom: 1px dotted #eee;">${ledger}</td>
+                        <td style="padding: 0.5rem; text-align: right; border-bottom: 1px dotted #eee;">${formatNumber(subgroup.ledgers[ledger])}</td>
+                    </tr>
+                `;
+            }
         });
     });
-    
-    // Show ungrouped income
-    if (ungroupedIncome > 0) {
-        reportHTML += `
-            <tr style="background-color: #f8f9fa; font-weight: bold;">
-                <td>Other Income (Ungrouped)</td>
-                <td style="text-align: right;">${formatNumber(ungroupedIncome)}</td>
+
+    // If no income, show message
+    if (sortedIncomeSubgroups.length === 0) {
+        html += `
+            <tr>
+                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--light-color);">No income transactions found</td>
             </tr>
         `;
     }
-    
-    totalIncome = groupedIncomeTotal + ungroupedIncome;
-    
-    reportHTML += `
+
+    html += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td><strong>Total Income</strong></td>
-                    <td style="text-align: right;"><strong>${formatNumber(totalIncome)}</strong></td>
+                    <td style="padding: 1rem; text-align: left;"><strong>Total Income</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${formatNumber(totalIncome)}</strong></td>
                 </tr>
             </tfoot>
         </table>
     `;
-    
-    // EXPENSE SECTION WITH GROUPS
-    reportHTML += `
-        <h3 style="margin-top: 3rem;">Expenses</h3>
+
+    // ========== EXPENSE SECTION ==========
+    html += `
+        <h3 class="section-title" style="margin-top: 3rem;">EXPENSES</h3>
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Particulars</th>
-                    <th style="text-align: right;">Amount</th>
+                    <th style="width: 70%;">Particulars</th>
+                    <th style="width: 30%; text-align: right;">Amount (${formatNumber(totalExpense)})</th>
                 </tr>
             </thead>
             <tbody>
     `;
-    
-    // Calculate total from groups
-    let groupedExpenseTotal = 0;
-    
-    // Show grouped expenses
-    Object.keys(expenseByGroup).sort().forEach(groupKey => {
-        const group = expenseByGroup[groupKey];
-        groupedExpenseTotal += group.total;
-        
-        reportHTML += `
-            <tr style="background-color: #f8f9fa; font-weight: bold;">
-                <td>${group.label}</td>
-                <td style="text-align: right;">${formatNumber(group.total)}</td>
+
+    // Sort expense subgroups alphabetically
+    const sortedExpenseSubgroups = Object.keys(expenseBySubgroup).sort();
+
+    sortedExpenseSubgroups.forEach(subgroupKey => {
+        const subgroup = expenseBySubgroup[subgroupKey];
+        html += `
+            <tr class="group-header">
+                <td style="padding: 0.8rem; border-bottom: 1px solid #ddd;"><strong>${subgroup.label}</strong></td>
+                <td style="padding: 0.8rem; text-align: right; border-bottom: 1px solid #ddd;"><strong>${formatNumber(subgroup.total)}</strong></td>
             </tr>
         `;
-        
-        // Show individual ledgers in this group (indented)
-        group.ledgers.sort((a, b) => a.name.localeCompare(b.name)).forEach(ledger => {
-            reportHTML += `
-                <tr>
-                    <td style="padding-left: 3rem;">&nbsp;&nbsp;&nbsp;↳ ${ledger.name}</td>
-                    <td style="text-align: right;">${formatNumber(ledger.amount)}</td>
-                </tr>
-            `;
+
+        // Show individual ledgers in this subgroup
+        Object.keys(subgroup.ledgers).sort().forEach(ledger => {
+            if (Math.abs(subgroup.ledgers[ledger]) > 0.01) {
+                html += `
+                    <tr class="ledger-row">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 4rem; border-bottom: 1px dotted #eee;">${ledger}</td>
+                        <td style="padding: 0.5rem; text-align: right; border-bottom: 1px dotted #eee;">${formatNumber(subgroup.ledgers[ledger])}</td>
+                    </tr>
+                `;
+            }
         });
     });
-    
-    // Show ungrouped expenses
-    if (ungroupedExpenses > 0) {
-        reportHTML += `
-            <tr style="background-color: #f8f9fa; font-weight: bold;">
-                <td>Other Expenses (Ungrouped)</td>
-                <td style="text-align: right;">${formatNumber(ungroupedExpenses)}</td>
+
+    // If no expenses, show message
+    if (sortedExpenseSubgroups.length === 0) {
+        html += `
+            <tr>
+                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--light-color);">No expense transactions found</td>
             </tr>
         `;
     }
-    
-    totalExpenses = groupedExpenseTotal + ungroupedExpenses;
-    
-    reportHTML += `
+
+    html += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td><strong>Total Expenses</strong></td>
-                    <td style="text-align: right;"><strong>${formatNumber(totalExpenses)}</strong></td>
+                    <td style="padding: 1rem; text-align: left;"><strong>Total Expenses</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${formatNumber(totalExpense)}</strong></td>
                 </tr>
             </tfoot>
         </table>
     `;
-    
-    const netProfit = totalIncome - totalExpenses;
-    
-    reportHTML += `
-        <div class="report-summary" style="margin-top: 3rem;">
-            <div class="summary-item" style="background-color: ${netProfit >= 0 ? '#d4edda' : '#f8d7da'};">
-                <div class="label" style="font-size: 1.6rem;">Net Profit/Loss</div>
-                <div class="value ${netProfit >= 0 ? 'positive' : 'negative'}" style="font-size: 2.4rem; font-weight: bold;">
-                    ${formatNumber(Math.abs(netProfit))}
-                    <span style="font-size: 1.4rem; margin-left: 1rem;">${netProfit >= 0 ? 'Profit' : 'Loss'}</span>
-                </div>
+
+    // ========== NET PROFIT/LOSS SECTION ==========
+    html += `
+        <h3 class="section-title" style="margin-top: 3rem;">NET ${netProfit >= 0 ? 'PROFIT' : 'LOSS'}</h3>
+        <table class="report-table">
+            <tbody>
+                <tr class="grand-total-row">
+                    <td style="padding: 1.5rem; text-align: left; width: 70%;"><strong>Net ${netProfit >= 0 ? 'Profit' : 'Loss'}</strong></td>
+                    <td style="padding: 1.5rem; text-align: right; width: 30%;"><strong>${formatNumber(Math.abs(netProfit))}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    `;
+
+    // ========== SUMMARY SECTION ==========
+    html += `
+        <div class="report-summary">
+            <div class="summary-item">
+                <div class="label">Total Income</div>
+                <div class="value positive">${formatNumber(totalIncome)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Total Expenses</div>
+                <div class="value negative">${formatNumber(totalExpense)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Gross Margin</div>
+                <div class="value ${totalIncome - totalExpense >= 0 ? 'positive' : 'negative'}">${formatNumber(totalIncome - totalExpense)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Net ${netProfit >= 0 ? 'Profit' : 'Loss'}</div>
+                <div class="value ${netProfit >= 0 ? 'positive' : 'negative'}">${formatNumber(Math.abs(netProfit))}</div>
             </div>
         </div>
     `;
-    
-    document.getElementById('report-content').innerHTML = reportHTML;
+
+    // Add status message
+    if (netProfit > 0) {
+        html += `
+            <div class="alert-success">
+                <i class="fas fa-chart-line" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Profitable:</strong> Your business has generated a profit of ${formatNumber(netProfit)}
+                </div>
+            </div>
+        `;
+    } else if (netProfit < 0) {
+        html += `
+            <div class="alert-warning">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Loss:</strong> Your business has incurred a loss of ${formatNumber(Math.abs(netProfit))}
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="alert-success">
+                <i class="fas fa-balance-scale" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Break-even:</strong> Income equals expenses
+                </div>
+            </div>
+        `;
+    }
+
+    document.getElementById('report-content').innerHTML = html;
 }
 
 // Helper function to format numbers
@@ -526,7 +857,13 @@ function formatDate(dateString) {
         return dateString;
     }
 }
+// Helper function to format numbers
+function formatNumber(num) {
+    if (num === undefined || num === null || isNaN(num)) return '0.00';
+    return Number(num).toFixed(2);
+}
 
+// ==================== BALANCE SHEET REPORT (SUBGROUP BASED) ====================
 function loadBalanceSheet() {
     const asOfDate = document.getElementById('as-of-date')?.value;
     
@@ -535,158 +872,371 @@ function loadBalanceSheet() {
         return;
     }
     
-    // Filter transactions up to asOfDate
-    const filteredTransactions = transactions.filter(t => t.date <= asOfDate);
-    
-    if (filteredTransactions.length === 0) {
+    if (typeof transactions === 'undefined' || transactions.length === 0) {
         document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found</div>';
         return;
     }
     
-    // Calculate balances by account type
-    const balances = {
-        assets: {},
-        liabilities: {},
-        equity: {}
-    };
+    // Filter transactions up to asOfDate
+    const filteredTransactions = transactions.filter(t => t.date <= asOfDate);
     
+    if (filteredTransactions.length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found up to this date</div>';
+        return;
+    }
+
+    // Get custom subgroups
+    const customSubGroups = window.customSubGroups || [];
+
+    // Create maps for subgroup labels
+    const subgroupLabelMap = {};
+    
+    // Add predefined subgroups
+    Object.keys(ledgerSubGroups).forEach(type => {
+        ledgerSubGroups[type].forEach(group => {
+            subgroupLabelMap[group.value] = group.label;
+        });
+    });
+    
+    // Add custom subgroups
+    customSubGroups.forEach(group => {
+        subgroupLabelMap[group.value] = group.label;
+    });
+
+    // Organize assets by subgroup
+    const assetsBySubgroup = {};
+    // Organize liabilities by subgroup
+    const liabilitiesBySubgroup = {};
+    // Organize equity by subgroup
+    const equityBySubgroup = {};
+
     let totalAssets = 0;
     let totalLiabilities = 0;
     let totalEquity = 0;
-    
+    let retainedEarnings = 0;
+
+    // Process each transaction
     filteredTransactions.forEach(t => {
-        // Access ledgers from global scope
-        const ledgerInfo = window.ledgers ? window.ledgers.find(l => l.name === t.ledger) : null;
+        // Find ledger info
+        const ledgerInfo = ledgers ? ledgers.find(l => l.name === t.ledger) : null;
         if (!ledgerInfo) return;
         
-        const balance = t.debit - t.credit;
+        // Calculate net effect
+        const balance = (t.debit || 0) - (t.credit || 0);
         
+        // Process based on ledger type
         if (ledgerInfo.type === 'asset') {
-            balances.assets[t.ledger] = (balances.assets[t.ledger] || 0) + balance;
-            totalAssets += balance;
-        } else if (ledgerInfo.type === 'liability') {
-            balances.liabilities[t.ledger] = (balances.liabilities[t.ledger] || 0) - balance;
-            totalLiabilities -= balance;
-        } else if (ledgerInfo.type === 'equity') {
-            balances.equity[t.ledger] = (balances.equity[t.ledger] || 0) - balance;
-            totalEquity -= balance;
+            const assetBalance = balance;
+            const subgroup = t.subgroup || 'other_asset';
+            
+            if (!assetsBySubgroup[subgroup]) {
+                assetsBySubgroup[subgroup] = {
+                    label: subgroupLabelMap[subgroup] || subgroup.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    ledgers: {},
+                    total: 0
+                };
+            }
+            
+            if (!assetsBySubgroup[subgroup].ledgers[ledgerInfo.name]) {
+                assetsBySubgroup[subgroup].ledgers[ledgerInfo.name] = 0;
+            }
+            assetsBySubgroup[subgroup].ledgers[ledgerInfo.name] += assetBalance;
+            assetsBySubgroup[subgroup].total += assetBalance;
+            totalAssets += assetBalance;
+        } 
+        else if (ledgerInfo.type === 'liability') {
+            const liabilityBalance = -(balance);
+            const subgroup = t.subgroup || 'other_liability';
+            
+            if (!liabilitiesBySubgroup[subgroup]) {
+                liabilitiesBySubgroup[subgroup] = {
+                    label: subgroupLabelMap[subgroup] || subgroup.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    ledgers: {},
+                    total: 0
+                };
+            }
+            
+            if (!liabilitiesBySubgroup[subgroup].ledgers[ledgerInfo.name]) {
+                liabilitiesBySubgroup[subgroup].ledgers[ledgerInfo.name] = 0;
+            }
+            liabilitiesBySubgroup[subgroup].ledgers[ledgerInfo.name] += liabilityBalance;
+            liabilitiesBySubgroup[subgroup].total += liabilityBalance;
+            totalLiabilities += liabilityBalance;
+        } 
+        else if (ledgerInfo.type === 'equity') {
+            const equityBalance = -(balance);
+            const subgroup = t.subgroup || 'other_equity';
+            
+            if (!equityBySubgroup[subgroup]) {
+                equityBySubgroup[subgroup] = {
+                    label: subgroupLabelMap[subgroup] || subgroup.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    ledgers: {},
+                    total: 0
+                };
+            }
+            
+            if (!equityBySubgroup[subgroup].ledgers[ledgerInfo.name]) {
+                equityBySubgroup[subgroup].ledgers[ledgerInfo.name] = 0;
+            }
+            equityBySubgroup[subgroup].ledgers[ledgerInfo.name] += equityBalance;
+            equityBySubgroup[subgroup].total += equityBalance;
+            totalEquity += equityBalance;
+        }
+        else if (ledgerInfo.type === 'income') {
+            // Income increases retained earnings
+            const incomeAmount = t.credit || 0;
+            retainedEarnings += incomeAmount;
+        }
+        else if (ledgerInfo.type === 'expense') {
+            // Expenses decrease retained earnings
+            const expenseAmount = t.debit || 0;
+            retainedEarnings -= expenseAmount;
         }
     });
-    
+
+    // Add retained earnings to equity (as a separate subgroup or under existing)
+    if (Math.abs(retainedEarnings) > 0.01) {
+        const subgroup = 'retained_earnings';
+        if (!equityBySubgroup[subgroup]) {
+            equityBySubgroup[subgroup] = {
+                label: 'Retained Earnings',
+                ledgers: {},
+                total: 0
+            };
+        }
+        equityBySubgroup[subgroup].ledgers['Retained Earnings'] = retainedEarnings;
+        equityBySubgroup[subgroup].total += retainedEarnings;
+        totalEquity += retainedEarnings;
+    }
+
+    // Generate report HTML
     let reportHTML = `
         <div class="report-header">
             <h2>Balance Sheet</h2>
-            <p>As of: ${asOfDate}</p>
+            <p>As of: ${formatDate(asOfDate)}</p>
         </div>
-        
-        <h3>Assets</h3>
+    `;
+
+    // ========== ASSETS SECTION ==========
+    reportHTML += `
+        <h3 class="section-title">ASSETS</h3>
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Particulars</th>
-                    <th>Amount</th>
+                    <th style="width: 70%;">Particulars</th>
+                    <th style="width: 30%; text-align: right;">Amount (${formatNumber(totalAssets)})</th>
                 </tr>
             </thead>
             <tbody>
     `;
-    
-    Object.keys(balances.assets).sort().forEach(asset => {
-        if (balances.assets[asset] !== 0) {
-            reportHTML += `
-                <tr>
-                    <td>${asset}</td>
-                    <td>${balances.assets[asset].toFixed(2)}</td>
-                </tr>
-            `;
-        }
+
+    // Sort asset subgroups alphabetically
+    const sortedAssetSubgroups = Object.keys(assetsBySubgroup).sort();
+
+    sortedAssetSubgroups.forEach(subgroupKey => {
+        const subgroup = assetsBySubgroup[subgroupKey];
+        reportHTML += `
+            <tr class="group-header">
+                <td style="padding: 0.8rem; border-bottom: 1px solid #ddd;"><strong>${subgroup.label}</strong></td>
+                <td style="padding: 0.8rem; text-align: right; border-bottom: 1px solid #ddd;"><strong>${formatNumber(subgroup.total)}</strong></td>
+            </tr>
+        `;
+
+        // Show individual ledgers in this subgroup
+        Object.keys(subgroup.ledgers).sort().forEach(ledger => {
+            if (Math.abs(subgroup.ledgers[ledger]) > 0.01) {
+                reportHTML += `
+                    <tr class="ledger-row">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 4rem; border-bottom: 1px dotted #eee;">${ledger}</td>
+                        <td style="padding: 0.5rem; text-align: right; border-bottom: 1px dotted #eee;">${formatNumber(subgroup.ledgers[ledger])}</td>
+                    </tr>
+                `;
+            }
+        });
     });
-    
+
+    // If no assets, show message
+    if (sortedAssetSubgroups.length === 0) {
+        reportHTML += `
+            <tr>
+                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--light-color);">No assets found</td>
+            </tr>
+        `;
+    }
+
     reportHTML += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td><strong>Total Assets</strong></td>
-                    <td><strong>${totalAssets.toFixed(2)}</strong></td>
+                    <td style="padding: 1rem; text-align: left;"><strong>Total Assets</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${formatNumber(totalAssets)}</strong></td>
                 </tr>
             </tfoot>
         </table>
-        
-        <h3 style="margin-top: 2rem;">Liabilities</h3>
+    `;
+
+    // ========== LIABILITIES SECTION ==========
+    reportHTML += `
+        <h3 class="section-title" style="margin-top: 3rem;">LIABILITIES</h3>
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Particulars</th>
-                    <th>Amount</th>
+                    <th style="width: 70%;">Particulars</th>
+                    <th style="width: 30%; text-align: right;">Amount (${formatNumber(totalLiabilities)})</th>
                 </tr>
             </thead>
             <tbody>
     `;
-    
-    Object.keys(balances.liabilities).sort().forEach(liability => {
-        if (balances.liabilities[liability] !== 0) {
-            reportHTML += `
-                <tr>
-                    <td>${liability}</td>
-                    <td>${balances.liabilities[liability].toFixed(2)}</td>
-                </tr>
-            `;
-        }
+
+    // Sort liability subgroups alphabetically
+    const sortedLiabilitySubgroups = Object.keys(liabilitiesBySubgroup).sort();
+
+    sortedLiabilitySubgroups.forEach(subgroupKey => {
+        const subgroup = liabilitiesBySubgroup[subgroupKey];
+        reportHTML += `
+            <tr class="group-header">
+                <td style="padding: 0.8rem; border-bottom: 1px solid #ddd;"><strong>${subgroup.label}</strong></td>
+                <td style="padding: 0.8rem; text-align: right; border-bottom: 1px solid #ddd;"><strong>${formatNumber(subgroup.total)}</strong></td>
+            </tr>
+        `;
+
+        // Show individual ledgers in this subgroup
+        Object.keys(subgroup.ledgers).sort().forEach(ledger => {
+            if (Math.abs(subgroup.ledgers[ledger]) > 0.01) {
+                reportHTML += `
+                    <tr class="ledger-row">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 4rem; border-bottom: 1px dotted #eee;">${ledger}</td>
+                        <td style="padding: 0.5rem; text-align: right; border-bottom: 1px dotted #eee;">${formatNumber(subgroup.ledgers[ledger])}</td>
+                    </tr>
+                `;
+            }
+        });
     });
-    
+
+    // If no liabilities, show message
+    if (sortedLiabilitySubgroups.length === 0) {
+        reportHTML += `
+            <tr>
+                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--light-color);">No liabilities found</td>
+            </tr>
+        `;
+    }
+
     reportHTML += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td><strong>Total Liabilities</strong></td>
-                    <td><strong>${totalLiabilities.toFixed(2)}</strong></td>
+                    <td style="padding: 1rem; text-align: left;"><strong>Total Liabilities</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${formatNumber(totalLiabilities)}</strong></td>
                 </tr>
             </tfoot>
         </table>
-        
-        <h3 style="margin-top: 2rem;">Equity</h3>
+    `;
+
+    // ========== EQUITY SECTION ==========
+    reportHTML += `
+        <h3 class="section-title" style="margin-top: 3rem;">EQUITY</h3>
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Particulars</th>
-                    <th>Amount</th>
+                    <th style="width: 70%;">Particulars</th>
+                    <th style="width: 30%; text-align: right;">Amount (${formatNumber(totalEquity)})</th>
                 </tr>
             </thead>
             <tbody>
     `;
-    
-    Object.keys(balances.equity).sort().forEach(equity => {
-        if (balances.equity[equity] !== 0) {
-            reportHTML += `
-                <tr>
-                    <td>${equity}</td>
-                    <td>${balances.equity[equity].toFixed(2)}</td>
-                </tr>
-            `;
-        }
+
+    // Sort equity subgroups alphabetically
+    const sortedEquitySubgroups = Object.keys(equityBySubgroup).sort();
+
+    sortedEquitySubgroups.forEach(subgroupKey => {
+        const subgroup = equityBySubgroup[subgroupKey];
+        reportHTML += `
+            <tr class="group-header">
+                <td style="padding: 0.8rem; border-bottom: 1px solid #ddd;"><strong>${subgroup.label}</strong></td>
+                <td style="padding: 0.8rem; text-align: right; border-bottom: 1px solid #ddd;"><strong>${formatNumber(subgroup.total)}</strong></td>
+            </tr>
+        `;
+
+        // Show individual ledgers in this subgroup
+        Object.keys(subgroup.ledgers).sort().forEach(ledger => {
+            if (Math.abs(subgroup.ledgers[ledger]) > 0.01) {
+                reportHTML += `
+                    <tr class="ledger-row">
+                        <td style="padding: 0.5rem 0.5rem 0.5rem 4rem; border-bottom: 1px dotted #eee;">${ledger}</td>
+                        <td style="padding: 0.5rem; text-align: right; border-bottom: 1px dotted #eee;">${formatNumber(subgroup.ledgers[ledger])}</td>
+                    </tr>
+                `;
+            }
+        });
     });
-    
+
+    // If no equity, show message
+    if (sortedEquitySubgroups.length === 0) {
+        reportHTML += `
+            <tr>
+                <td colspan="2" style="text-align: center; padding: 2rem; color: var(--light-color);">No equity found</td>
+            </tr>
+        `;
+    }
+
     reportHTML += `
             </tbody>
             <tfoot>
                 <tr class="total-row">
-                    <td><strong>Total Equity</strong></td>
-                    <td><strong>${totalEquity.toFixed(2)}</strong></td>
+                    <td style="padding: 1rem; text-align: left;"><strong>Total Equity</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${formatNumber(totalEquity)}</strong></td>
                 </tr>
             </tfoot>
         </table>
-        
+    `;
+
+    // ========== SUMMARY ==========
+    const totalLiabilitiesEquity = totalLiabilities + totalEquity;
+    const difference = Math.abs(totalAssets - totalLiabilitiesEquity);
+
+    reportHTML += `
         <div class="report-summary">
             <div class="summary-item">
                 <div class="label">Total Assets</div>
-                <div class="value">${totalAssets.toFixed(2)}</div>
+                <div class="value ${totalAssets >= 0 ? 'positive' : 'negative'}">${formatNumber(totalAssets)}</div>
             </div>
             <div class="summary-item">
-                <div class="label">Total Liabilities + Equity</div>
-                <div class="value">${(totalLiabilities + totalEquity).toFixed(2)}</div>
+                <div class="label">Total Liabilities</div>
+                <div class="value ${totalLiabilities >= 0 ? 'positive' : 'negative'}">${formatNumber(totalLiabilities)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Total Equity</div>
+                <div class="value ${totalEquity >= 0 ? 'positive' : 'negative'}">${formatNumber(totalEquity)}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Liabilities + Equity</div>
+                <div class="value ${totalLiabilitiesEquity >= 0 ? 'positive' : 'negative'}">${formatNumber(totalLiabilitiesEquity)}</div>
             </div>
         </div>
     `;
-    
+
+    // Check if balance sheet balances
+    if (difference > 0.01) {
+        reportHTML += `
+            <div class="alert-warning">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Warning:</strong> Balance sheet does not balance! Difference: ${formatNumber(difference)}
+                </div>
+            </div>
+        `;
+    } else {
+        reportHTML += `
+            <div class="alert-success">
+                <i class="fas fa-check-circle" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Balanced:</strong> Assets = Liabilities + Equity
+                </div>
+            </div>
+        `;
+    }
+
     document.getElementById('report-content').innerHTML = reportHTML;
 }
 
@@ -710,3 +1260,10 @@ function exportToExcel() {
     a.click();
     window.URL.revokeObjectURL(url);
 }
+
+// ==================== NEW EXPORT FUNCTIONS FOR SUBGROUP ====================
+
+window.loadSubgroupReport = loadSubgroupReport;
+window.loadAllSubgroupsSummary = loadAllSubgroupsSummary;
+window.getSubgroupSummary = getSubgroupSummary;
+window.filterBySubgroup = filterBySubgroup;
