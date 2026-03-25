@@ -1,3 +1,45 @@
+// ==================== LOGIN CHECK ====================
+(function checkLogin() {
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    const currentPage = window.location.pathname;
+    
+    // Skip login check for sign-in page
+    if (currentPage.includes('sign-in.html')) {
+        return;
+    }
+    
+    // If not logged in, redirect to sign-in
+    if (!loggedInUser) {
+        window.location.href = 'sign-in.html';
+        return;
+    }
+    
+    // Optional: Add user info to page
+    try {
+        const user = JSON.parse(loggedInUser);
+        // Add user badge to header if needed
+        const headerFlex = document.querySelector('.header .flex');
+        if (headerFlex && !document.querySelector('.user-badge')) {
+            const userBadge = document.createElement('div');
+            userBadge.className = 'user-badge';
+            userBadge.style.cssText = 'display: flex; align-items: center; gap: 1rem; font-size: 1.3rem;';
+            userBadge.innerHTML = `
+                <i class="fas fa-user-circle" style="font-size: 2rem; color: var(--main-color);"></i>
+                <span style="font-weight: 500;">${user.name || user.username}</span>
+                <button onclick="logout()" style="background: none; border: none; cursor: pointer; color: var(--light-color);">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            `;
+            headerFlex.appendChild(userBadge);
+        }
+    } catch(e) {}
+})();
+
+function logout() {
+    localStorage.removeItem('loggedInUser');
+    window.location.href = 'sign-in.html';
+}
+
 let menuBtn = document.querySelector('#menu-btn');
 let navbar = document.querySelector('.header .navbar');
 
@@ -105,3 +147,4 @@ document.addEventListener('keydown', (e) =>{
         removeNavbar();
     }
 });
+

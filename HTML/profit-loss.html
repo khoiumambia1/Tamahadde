@@ -198,6 +198,7 @@
                         </ul>
                     </li>
                     <li><a href="contact.html">contact</a></li>
+                    <li><a href="audit.html">audit</a></li>
                 </ul>
             </nav>
             <div id="menu-btn" class="fas fa-bars-staggered"></div>
@@ -297,5 +298,38 @@
             console.log('Safety checks completed');
         });
     </script>
+    <!-- Dark Mode Initialization -->
+<script>
+    // Initialize dark mode when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize dark mode if function exists
+        if (typeof initDarkMode === 'function') {
+            initDarkMode();
+        }
+        
+        // Setup dark mode toggle button
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                if (typeof toggleDarkMode === 'function') {
+                    toggleDarkMode();
+                }
+            });
+        }
+        
+        // Setup dark mode settings button
+        const settingsBtn = document.getElementById('darkModeSettingsBtn');
+        if (settingsBtn && typeof showDarkModeSettings === 'function') {
+            settingsBtn.addEventListener('click', function() {
+                showDarkModeSettings();
+            });
+        }
+        
+        // Setup keyboard shortcut
+        if (typeof setupDarkModeKeyboardShortcut === 'function') {
+            setupDarkModeKeyboardShortcut();
+        }
+    });
+</script>
 </body>
 </html>

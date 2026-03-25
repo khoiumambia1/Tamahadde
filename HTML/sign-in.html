@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Khoium's Accounting</title>
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --main-color: #1e3a5f;
+            --secondary-color: #2c7a4d;
+            --white: #ffffff;
+            --black: #1e293b;
+            --light-color: #64748b;
+            --bg-color: #f8fafc;
+            --border: 1px solid #e2e8f0;
+            --box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            --radius-lg: 1rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--box-shadow);
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo i {
+            color: var(--main-color);
+            margin-right: 0.5rem;
+        }
+
+        .tagline {
+            font-size: 1.4rem;
+            color: var(--light-color);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group label i {
+            color: var(--main-color);
+            margin-right: 0.5rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            font-size: 1.4rem;
+            border: var(--border);
+            border-radius: 0.5rem;
+            background: var(--white);
+            transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--main-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--main-color);
+            color: var(--white);
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover {
+            background: #0f2b44;
+            transform: translateY(-2px);
+        }
+
+        .user-type {
+            display: flex;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .user-type-btn {
+            flex: 1;
+            padding: 0.8rem;
+            background: var(--bg-color);
+            border: var(--border);
+            border-radius: 0.5rem;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--light-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-type-btn.active {
+            background: var(--main-color);
+            border-color: var(--main-color);
+            color: var(--white);
+        }
+
+        .user-type-btn:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        .demo-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: var(--border);
+            font-size: 1.2rem;
+            color: var(--light-color);
+        }
+
+        .demo-info p {
+            margin: 0.5rem 0;
+        }
+
+        .demo-info code {
+            background: var(--bg-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <i class="fas fa-calculator"></i> Khoium's Accounting
+            </div>
+            <div class="tagline">Professional Accounting Software</div>
+
+            <div class="user-type">
+                <button class="user-type-btn active" onclick="setUserType('user')">User</button>
+                <button class="user-type-btn" onclick="setUserType('admin')">Admin</button>
+            </div>
+
+            <form id="loginForm" onsubmit="return handleLogin(event)">
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> Email / Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+            </form>
+
+            <div class="demo-info">
+                <p><i class="fas fa-info-circle"></i> Demo Credentials:</p>
+                <p>User: <code>demo</code> / <code>demo</code></p>
+                <p>Admin: <code>admin</code> / <code>admin</code></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userType = 'user';
+
+        function setUserType(type) {
+            userType = type;
+            document.querySelectorAll('.user-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            // Demo authentication
+            if (userType === 'user' && username === 'demo' && password === 'demo') {
+                localStorage.setItem('loggedInUser', JSON.stringify({
+                    username: username,
+                    type: 'user',
+                    name: 'Demo User'
+                }));
+                window.location.href = 'index.html';
+                return false;
+            } 
+            else if (userType === 'admin' && username === 'admin' && password === 'admin') {
+                localStorage.setItem('loggedInUser', JSON.stringify({
+                    username: username,
+                    type: 'admin',
+                    name: 'Administrator'
+                }));
+                window.location.href = 'index.html';
+                return false;
+            }
+            else {
+                alert('Invalid credentials. Use demo/demo or admin/admin');
+                return false;
+            }
+        }
+
+        // Check if already logged in
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (loggedInUser && window.location.pathname !== '/sign-in.html') {
+            // Already logged in, redirect to home if on sign-in page
+            if (window.location.pathname.includes('sign-in.html')) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+    <!-- Dark Mode Initialization -->
+<script>
+    // Initialize dark mode when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize dark mode if function exists
+        if (typeof initDarkMode === 'function') {
+            initDarkMode();
+        }
+        
+        // Setup dark mode toggle button
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                if (typeof toggleDarkMode === 'function') {
+                    toggleDarkMode();
+                }
+            });
+        }
+        
+        // Setup dark mode settings button
+        const settingsBtn = document.getElementById('darkModeSettingsBtn');
+        if (settingsBtn && typeof showDarkModeSettings === 'function') {
+            settingsBtn.addEventListener('click', function() {
+                showDarkModeSettings();
+            });
+        }
+        
+        // Setup keyboard shortcut
+        if (typeof setupDarkModeKeyboardShortcut === 'function') {
+            setupDarkModeKeyboardShortcut();
+        }
+    });
+</script>
+</body>
+</html>

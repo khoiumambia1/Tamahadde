@@ -17,13 +17,14 @@ function initReportDatePickers() {
     });
 }
 
-// Load ledgers for selector (add this to reports.js if not already there)
+// Load ledgers for selector
 function loadLedgersForSelector() {
     const ledgerSelect = document.getElementById('ledger-select');
     if (!ledgerSelect) return;
     
     let options = '<option value="">-- Select Ledger --</option>';
     
+    // Get all unique ledgers from transactions
     if (typeof transactions !== 'undefined' && transactions.length > 0) {
         const uniqueLedgers = [...new Set(transactions.map(t => t.ledger))];
         uniqueLedgers.sort().forEach(ledger => {
@@ -327,7 +328,7 @@ function loadAllSubgroupsSummary() {
 
 // ==================== EXISTING FUNCTIONS (UNCHANGED) ====================
 
-// ==================== LEDGER REPORT WITH AS OF DATE ====================
+// ==================== LEDGER REPORT WITHOUT OPENING BALANCE ====================
 function loadLedgerReport() {
     const asOfDate = document.getElementById('as-of-date')?.value;
     const selectedLedger = document.getElementById('ledger-select')?.value;
@@ -348,27 +349,39 @@ function loadLedgerReport() {
         return;
     }
     
-    // Calculate opening balance (all transactions before asOfDate)
-    let openingBalance = 0;
-    const allLedgerTransactions = transactions.filter(t => t.ledger === selectedLedger);
-    const previousTransactions = allLedgerTransactions.filter(t => t.date < asOfDate);
-    previousTransactions.forEach(t => {
-        openingBalance += (t.debit || 0) - (t.credit || 0);
-    });
+    // Get all transactions for this ledger up to asOfDate
+    const allLedgerTransactions = transactions.filter(t => t.ledger === selectedLedger && t.date <= asOfDate);
     
-    // Filter transactions up to asOfDate (including those on the date)
-    let filteredTransactions = allLedgerTransactions.filter(t => t.date <= asOfDate);
-    
-    if (filteredTransactions.length === 0) {
-        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found up to this date</div>';
+    if (allLedgerTransactions.length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found for this ledger up to this date</div>';
         return;
     }
     
     // Sort by date
-    filteredTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+    allLedgerTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // Get custom subgroups if available
+    // Get custom subgroups
     const customSubGroups = window.customSubGroups || [];
+    
+    // Create subgroup label map
+    const subgroupLabelMap = {};
+    
+    // Add predefined subgroups
+    Object.keys(ledgerSubGroups).forEach(type => {
+        ledgerSubGroups[type].forEach(group => {
+            subgroupLabelMap[group.value] = group.label;
+        });
+    });
+    
+    // Add custom subgroups
+    customSubGroups.forEach(group => {
+        subgroupLabelMap[group.value] = group.label;
+    });
+    
+    // Calculate running balance
+    let runningBalance = 0;
+    let totalDebit = 0;
+    let totalCredit = 0;
     
     // Generate report HTML
     let reportHTML = `
@@ -386,46 +399,40 @@ function loadLedgerReport() {
                     <th>Debit</th>
                     <th>Credit</th>
                     <th>Balance</th>
-                </tr>
+                 </tr>
             </thead>
             <tbody>
     `;
     
-    // Show opening balance row
-    reportHTML += `
-        <tr class="opening-balance-row" style="background: #f0f0f0; font-weight: bold;">
-            <td colspan="4"><strong>Opening Balance (before ${formatDate(asOfDate)})</strong></td>
-            <td></td>
-            <td></td>
-            <td><strong>${openingBalance.toFixed(2)}</strong></td>
-        </tr>
-    `;
-    
-    let runningBalance = openingBalance;
-    let totalDebit = 0;
-    let totalCredit = 0;
-    
-    filteredTransactions.forEach(t => {
+    allLedgerTransactions.forEach(t => {
+        // Calculate running balance for this transaction
         runningBalance += (t.debit || 0) - (t.credit || 0);
+        
+        // Add to totals
         totalDebit += t.debit || 0;
         totalCredit += t.credit || 0;
         
         // Get subgroup display
         let subgroupDisplay = '-';
         if (t.subgroup && t.subgroup !== '') {
-            const customSubGroup = customSubGroups.find(s => s.value === t.subgroup);
-            subgroupDisplay = customSubGroup ? customSubGroup.label : t.subgroup;
+            subgroupDisplay = subgroupLabelMap[t.subgroup] || t.subgroup.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+        
+        // Get narration or description
+        let description = t.narration || '-';
+        if (t.bank_name) {
+            description = `${t.bank_name}${t.account_number ? ` (${t.account_number})` : ''} - ${description}`;
         }
         
         reportHTML += `
             <tr>
                 <td>${t.date}</td>
                 <td>${t.voucher || '-'}</td>
-                <td>${t.narration || '-'}</td>
+                <td>${description}</td>
                 <td>${subgroupDisplay !== '-' ? `<span class="subgroup-badge">${subgroupDisplay}</span>` : '-'}</td>
-                <td>${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
-                <td>${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
-                <td>${runningBalance.toFixed(2)}</td>
+                <td style="color: #28a745; font-weight: ${t.debit > 0 ? 'bold' : 'normal'};">${t.debit > 0 ? t.debit.toFixed(2) : '-'}</td>
+                <td style="color: #dc3545; font-weight: ${t.credit > 0 ? 'bold' : 'normal'};">${t.credit > 0 ? t.credit.toFixed(2) : '-'}</td>
+                <td style="font-weight: bold;">${runningBalance.toFixed(2)}</td>
             </tr>
         `;
     });
@@ -433,34 +440,40 @@ function loadLedgerReport() {
     reportHTML += `
             </tbody>
             <tfoot>
-                <tr class="total-row">
-                    <td colspan="4"><strong>Total (Period)</strong></td>
+                <tr class="total-row" style="background: #e8e8e8; font-weight: bold;">
+                    <td colspan="4"><strong>Total</strong></td>
                     <td><strong>${totalDebit.toFixed(2)}</strong></td>
                     <td><strong>${totalCredit.toFixed(2)}</strong></td>
-                    <td><strong>${(runningBalance - openingBalance).toFixed(2)}</strong></td>
+                    <td><strong>${runningBalance.toFixed(2)}</strong></td>
                 </tr>
             </tfoot>
         </table>
         
-        <div class="report-summary">
-            <div class="summary-item">
-                <div class="label">Opening Balance</div>
-                <div class="value">${openingBalance.toFixed(2)}</div>
+        <div class="report-summary" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div class="summary-item" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: .5rem;">
+                <div class="label" style="font-size: 1.2rem; color: #666;">Total Debit</div>
+                <div class="value" style="font-size: 2rem; font-weight: bold; color: #28a745;">${totalDebit.toFixed(2)}</div>
             </div>
-            <div class="summary-item">
-                <div class="label">Period Net Change</div>
-                <div class="value">${(runningBalance - openingBalance).toFixed(2)}</div>
+            <div class="summary-item" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: .5rem;">
+                <div class="label" style="font-size: 1.2rem; color: #666;">Total Credit</div>
+                <div class="value" style="font-size: 2rem; font-weight: bold; color: #dc3545;">${totalCredit.toFixed(2)}</div>
             </div>
-            <div class="summary-item">
-                <div class="label">Closing Balance</div>
-                <div class="value ${runningBalance >= 0 ? 'positive' : 'negative'}">${runningBalance.toFixed(2)}</div>
+            <div class="summary-item" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: .5rem;">
+                <div class="label" style="font-size: 1.2rem; color: #666;">Closing Balance</div>
+                <div class="value" style="font-size: 2rem; font-weight: bold; color: ${runningBalance >= 0 ? '#28a745' : '#dc3545'};">${runningBalance.toFixed(2)}</div>
             </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem; padding: 1rem; background: #e3f2fd; border-radius: .5rem; font-size: 1.2rem; text-align: center;">
+            <i class="fas fa-info-circle"></i> 
+            Showing ${allLedgerTransactions.length} transaction(s) up to ${formatDate(asOfDate)}
         </div>
     `;
     
     document.getElementById('report-content').innerHTML = reportHTML;
 }
 
+// ==================== TRIAL BALANCE USING CLOSING BALANCES ====================
 function loadTrialBalance() {
     const asOfDate = document.getElementById('as-of-date')?.value;
     
@@ -469,77 +482,195 @@ function loadTrialBalance() {
         return;
     }
     
-    // Filter transactions up to asOfDate
-    const filteredTransactions = transactions.filter(t => t.date <= asOfDate);
-    
-    if (filteredTransactions.length === 0) {
+    if (typeof transactions === 'undefined' || transactions.length === 0) {
         document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found</div>';
         return;
     }
     
-    // Calculate balances for each ledger
-    const balances = {};
+    // Get all transactions up to asOfDate
+    const filteredTransactions = transactions.filter(t => t.date <= asOfDate);
+    
+    if (filteredTransactions.length === 0) {
+        document.getElementById('report-content').innerHTML = '<div class="loading">No transactions found up to this date</div>';
+        return;
+    }
+    
+    // Calculate closing balance for each ledger
+    const ledgerBalances = {};
+    
     filteredTransactions.forEach(t => {
-        if (!balances[t.ledger]) {
-            balances[t.ledger] = { debit: 0, credit: 0 };
+        const ledgerName = t.ledger;
+        const amount = (t.debit || 0) - (t.credit || 0);
+        
+        if (!ledgerBalances[ledgerName]) {
+            ledgerBalances[ledgerName] = {
+                debit: 0,
+                credit: 0,
+                balance: 0
+            };
         }
-        balances[t.ledger].debit += t.debit;
-        balances[t.ledger].credit += t.credit;
+        
+        // Update running balance
+        ledgerBalances[ledgerName].balance += amount;
     });
     
+    // Separate ledgers into debit and credit balances
+    const debitBalances = [];
+    const creditBalances = [];
+    
+    Object.keys(ledgerBalances).sort().forEach(ledger => {
+        const balance = ledgerBalances[ledger].balance;
+        
+        if (balance > 0) {
+            debitBalances.push({
+                ledger: ledger,
+                amount: balance
+            });
+        } else if (balance < 0) {
+            creditBalances.push({
+                ledger: ledger,
+                amount: Math.abs(balance)
+            });
+        }
+    });
+    
+    // Calculate totals
     let totalDebit = 0;
     let totalCredit = 0;
+    
+    debitBalances.forEach(item => {
+        totalDebit += item.amount;
+    });
+    
+    creditBalances.forEach(item => {
+        totalCredit += item.amount;
+    });
+    
+    // Get custom subgroups for display
+    const customSubGroups = window.customSubGroups || [];
+    const subgroupLabelMap = {};
+    
+    // Add predefined subgroups
+    Object.keys(ledgerSubGroups).forEach(type => {
+        ledgerSubGroups[type].forEach(group => {
+            subgroupLabelMap[group.value] = group.label;
+        });
+    });
+    
+    // Add custom subgroups
+    customSubGroups.forEach(group => {
+        subgroupLabelMap[group.value] = group.label;
+    });
+    
+    // Generate report HTML
     let reportHTML = `
         <div class="report-header">
             <h2>Trial Balance</h2>
-            <p>As of: ${asOfDate}</p>
+            <p>As of: ${formatDate(asOfDate)}</p>
+            <p style="font-size: 1.2rem; color: #666; margin-top: 0.5rem;">
+                <i class="fas fa-info-circle"></i> 
+                Based on closing balances from ${filteredTransactions.length} transaction(s)
+            </p>
         </div>
+        
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Ledger</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
+                    <th style="width: 50%;">Ledger Account</th>
+                    <th style="width: 25%; text-align: right;">Debit Balance</th>
+                    <th style="width: 25%; text-align: right;">Credit Balance</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
-    Object.keys(balances).sort().forEach(ledger => {
-        totalDebit += balances[ledger].debit;
-        totalCredit += balances[ledger].credit;
-        
+    // Show all ledgers with debit balances
+    debitBalances.forEach(item => {
         reportHTML += `
             <tr>
-                <td>${ledger}</td>
-                <td>${balances[ledger].debit > 0 ? balances[ledger].debit.toFixed(2) : '-'}</td>
-                <td>${balances[ledger].credit > 0 ? balances[ledger].credit.toFixed(2) : '-'}</td>
+                <td style="padding: 0.8rem;">${item.ledger}</td>
+                <td style="padding: 0.8rem; text-align: right; color: #28a745; font-weight: bold;">${item.amount.toFixed(2)}</td>
+                <td style="padding: 0.8rem; text-align: right;">-</td>
             </tr>
         `;
     });
     
+    // Show all ledgers with credit balances
+    creditBalances.forEach(item => {
+        reportHTML += `
+            <tr>
+                <td style="padding: 0.8rem;">${item.ledger}</td>
+                <td style="padding: 0.8rem; text-align: right;">-</td>
+                <td style="padding: 0.8rem; text-align: right; color: #dc3545; font-weight: bold;">${item.amount.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+    
+    // If no transactions
+    if (debitBalances.length === 0 && creditBalances.length === 0) {
+        reportHTML += `
+            <tr>
+                <td colspan="3" style="text-align: center; padding: 2rem; color: var(--light-color);">
+                    No balances found
+                </td>
+            </tr>
+        `;
+    }
+    
     reportHTML += `
             </tbody>
             <tfoot>
-                <tr class="total-row">
-                    <td><strong>Total</strong></td>
-                    <td><strong>${totalDebit.toFixed(2)}</strong></td>
-                    <td><strong>${totalCredit.toFixed(2)}</strong></td>
+                <tr class="total-row" style="background: #e8e8e8; font-weight: bold;">
+                    <td style="padding: 1rem;"><strong>Total</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${totalDebit.toFixed(2)}</strong></td>
+                    <td style="padding: 1rem; text-align: right;"><strong>${totalCredit.toFixed(2)}</strong></td>
                 </tr>
             </tfoot>
         </table>
     `;
     
-    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+    // Check if trial balance is balanced
+    const difference = Math.abs(totalDebit - totalCredit);
+    
+    if (difference > 0.01) {
         reportHTML += `
-            <div class="report-summary">
-                <div class="summary-item">
-                    <div class="label">Difference</div>
-                    <div class="value negative">${(totalDebit - totalCredit).toFixed(2)}</div>
+            <div class="alert-warning" style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: .5rem; display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Warning:</strong> Trial balance does not balance! 
+                    Difference: ${difference.toFixed(2)} 
+                    (Debit: ${totalDebit.toFixed(2)} vs Credit: ${totalCredit.toFixed(2)})
+                </div>
+            </div>
+        `;
+    } else {
+        reportHTML += `
+            <div class="alert-success" style="margin-top: 2rem; padding: 1.5rem; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: .5rem; display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-check-circle" style="font-size: 2rem;"></i>
+                <div>
+                    <strong>Balanced:</strong> Debits (${totalDebit.toFixed(2)}) = Credits (${totalCredit.toFixed(2)})
                 </div>
             </div>
         `;
     }
+    
+    // Add summary cards
+    reportHTML += `
+        <div class="report-summary" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div class="summary-item" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: .5rem;">
+                <div class="label" style="font-size: 1.2rem; color: #666;">Total Ledgers</div>
+                <div class="value" style="font-size: 2rem; font-weight: bold;">${debitBalances.length + creditBalances.length}</div>
+            </div>
+            <div class="summary-item" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: .5rem;">
+                <div class="label" style="font-size: 1.2rem; color: #666;">Debit Balances</div>
+                <div class="value" style="font-size: 2rem; font-weight: bold; color: #28a745;">${debitBalances.length}</div>
+            </div>
+            <div class="summary-item" style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: .5rem;">
+                <div class="label" style="font-size: 1.2rem; color: #666;">Credit Balances</div>
+                <div class="value" style="font-size: 2rem; font-weight: bold; color: #dc3545;">${creditBalances.length}</div>
+            </div>
+        </div>
+    `;
     
     document.getElementById('report-content').innerHTML = reportHTML;
 }

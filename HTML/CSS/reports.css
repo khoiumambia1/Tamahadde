@@ -1,4 +1,4 @@
-/* Reports CSS */
+/* Reports CSS - Professional Redesign */
 
 .report-section {
     padding: 2rem;
@@ -9,7 +9,7 @@
 .report-controls {
     background: var(--white);
     padding: 2rem;
-    border-radius: 1rem;
+    border-radius: var(--radius-lg);
     box-shadow: var(--box-shadow);
     margin-bottom: 2rem;
     display: flex;
@@ -28,11 +28,12 @@
 
 .date-range .form-group {
     margin-bottom: 0;
-    min-width: 150px;
+    min-width: 180px;
 }
 
 .date-range label {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+    font-weight: 500;
     color: var(--black);
     margin-bottom: 0.5rem;
     display: block;
@@ -42,8 +43,15 @@
     padding: 1rem;
     font-size: 1.4rem;
     border: var(--border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-md);
     width: 100%;
+    background: var(--white);
+}
+
+.date-range input:focus {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+    outline: none;
 }
 
 .report-actions {
@@ -54,14 +62,14 @@
 
 .report-actions .btn {
     margin-top: 0;
-    padding: 1rem 2rem;
-    font-size: 1.4rem;
+    padding: 1rem 1.8rem;
+    font-size: 1.3rem;
 }
 
 .ledger-selector {
     background: var(--white);
     padding: 2rem;
-    border-radius: 1rem;
+    border-radius: var(--radius-lg);
     box-shadow: var(--box-shadow);
     margin-bottom: 2rem;
     display: flex;
@@ -71,54 +79,61 @@
 }
 
 .ledger-selector label {
-    font-size: 1.6rem;
-    color: var(--black);
+    font-size: 1.4rem;
     font-weight: 500;
+    color: var(--black);
 }
 
 .ledger-selector select {
     flex: 1;
-    min-width: 300px;
+    min-width: 280px;
     padding: 1rem;
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     border: var(--border);
-    border-radius: 0.5rem;
-    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    cursor: pointer;
+}
+
+.ledger-selector select:focus {
+    border-color: var(--main-color);
+    outline: none;
 }
 
 .report-content {
     background: var(--white);
-    padding: 3rem;
-    border-radius: 1rem;
+    padding: 2.5rem;
+    border-radius: var(--radius-lg);
     box-shadow: var(--box-shadow);
     overflow-x: auto;
 }
 
 .report-content .loading {
     text-align: center;
-    padding: 5rem;
+    padding: 4rem;
     color: var(--light-color);
-    font-size: 1.8rem;
+    font-size: 1.6rem;
 }
 
 .report-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
 }
 
 .report-table th {
-    background: var(--main-color);
-    color: var(--white);
-    padding: 1.2rem;
+    background: var(--bg-color);
+    color: var(--black);
+    padding: 1rem;
     font-weight: 600;
     text-align: left;
+    border-bottom: 2px solid var(--border);
 }
 
 .report-table td {
-    padding: 1rem;
+    padding: 0.9rem;
     border-bottom: var(--border);
-    color: var(--black);
+    color: var(--light-color);
 }
 
 .report-table tr:last-child td {
@@ -127,37 +142,41 @@
 
 .report-table .total-row {
     background: var(--bg-color);
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .report-table .total-row td {
     border-top: 2px solid var(--main-color);
+    color: var(--black);
 }
 
 .report-summary {
-    margin-top: 3rem;
+    margin-top: 2.5rem;
     padding: 2rem;
     background: var(--bg-color);
-    border-radius: 1rem;
+    border-radius: var(--radius-lg);
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
 }
 
 .summary-item {
     text-align: center;
+    padding: 1rem;
 }
 
 .summary-item .label {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: var(--light-color);
     margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .summary-item .value {
-    font-size: 2.4rem;
+    font-size: 2rem;
+    font-weight: 700;
     color: var(--main-color);
-    font-weight: bold;
 }
 
 .summary-item .value.positive {
@@ -165,7 +184,7 @@
 }
 
 .summary-item .value.negative {
-    color: #dc3545;
+    color: #dc2626;
 }
 
 .report-header {
@@ -174,14 +193,35 @@
 }
 
 .report-header h2 {
-    font-size: 2.4rem;
+    font-size: 2rem;
+    font-weight: 700;
     color: var(--black);
     margin-bottom: 0.5rem;
 }
 
 .report-header p {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     color: var(--light-color);
+}
+
+/* Subgroup styles */
+.subgroup-badge {
+    background: var(--secondary-color);
+    color: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 1rem;
+    display: inline-block;
+}
+
+.group-header td {
+    background: var(--bg-color);
+    font-weight: 600;
+    color: var(--black);
+}
+
+.ledger-row td:first-child {
+    padding-left: 3rem !important;
 }
 
 /* Print styles */
@@ -202,6 +242,11 @@
     .report-content {
         box-shadow: none;
         padding: 0;
+    }
+    
+    .report-table th {
+        background: #e2e8f0;
+        color: #000;
     }
 }
 
@@ -227,6 +272,7 @@
     
     .report-actions .btn {
         flex: 1;
+        justify-content: center;
     }
     
     .ledger-selector {
@@ -237,4 +283,97 @@
     .ledger-selector select {
         min-width: auto;
     }
+    
+    .report-summary {
+        grid-template-columns: 1fr;
+    }
+}
+/* Dark Mode Specific Styles for Reports */
+.dark-mode .report-table th {
+    background: var(--main-color);
+    color: var(--white);
+}
+
+.dark-mode .report-table td {
+    color: var(--black);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .report-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .report-summary {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .summary-item {
+    background: var(--white);
+}
+
+.dark-mode .group-header {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .total-row {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .alert-success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #8bc34a;
+    border-color: #28a745;
+}
+
+.dark-mode .alert-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border-color: #ffc107;
+}
+
+.dark-mode .badge.payment {
+    background: #ffc107;
+    color: #000;
+}
+
+.dark-mode .badge.receipt {
+    background: #28a745;
+    color: #fff;
+}
+
+.dark-mode .badge.journal {
+    background: #17a2b8;
+    color: #fff;
+}
+
+/* Dark mode for audit page */
+.dark-mode .audit-controls,
+.dark-mode .audit-trail-table,
+.dark-mode .ledger-activity,
+.dark-mode .audit-log-summary {
+    background: var(--white);
+}
+
+.dark-mode .summary-card {
+    background: var(--white);
+}
+
+.dark-mode .chart-container {
+    background: var(--white);
+}
+
+.dark-mode .setting-item select,
+.dark-mode .setting-item input {
+    background: var(--bg-color);
+    color: var(--black);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode for data management */
+.dark-mode .data-card {
+    background: var(--bg-color);
+}
+
+.dark-mode .backup-history table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
 }

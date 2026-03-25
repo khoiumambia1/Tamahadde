@@ -1,0 +1,470 @@
+/* Audit Page Styles */
+
+.audit-section {
+    padding: 2rem;
+    background: var(--bg-color);
+    min-height: 100vh;
+}
+
+/* Audit Controls */
+.audit-controls {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 2rem;
+}
+
+.date-range {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.date-range .form-group {
+    margin-bottom: 0;
+    min-width: 200px;
+}
+
+.audit-filters {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.audit-filters .form-group {
+    margin-bottom: 0;
+    min-width: 180px;
+}
+
+.audit-filters select {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.4rem;
+    border: var(--border);
+    border-radius: 0.5rem;
+    background: var(--bg-color);
+}
+
+.audit-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.audit-actions .btn {
+    margin-top: 0;
+    padding: 1rem 2rem;
+    font-size: 1.4rem;
+}
+
+/* Summary Cards */
+.audit-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 2rem rgba(0,0,0,0.1);
+}
+
+.summary-card i {
+    font-size: 3rem;
+    color: var(--main-color);
+}
+
+.summary-info h3 {
+    font-size: 2.2rem;
+    color: var(--black);
+    margin-bottom: 0.3rem;
+}
+
+.summary-info p {
+    font-size: 1.2rem;
+    color: var(--light-color);
+}
+
+/* Analytics Charts */
+.audit-analytics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+}
+
+.chart-container h3 {
+    font-size: 1.8rem;
+    color: var(--black);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-container h3 i {
+    color: var(--main-color);
+}
+
+.chart-container canvas {
+    max-height: 300px;
+    width: 100%;
+}
+
+/* Audit Trail Table */
+.audit-trail-table {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 2rem;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.table-header h3 {
+    font-size: 2rem;
+    color: var(--black);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-header h3 i {
+    color: var(--main-color);
+}
+
+.table-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.table-controls input {
+    padding: 0.8rem 1.2rem;
+    font-size: 1.4rem;
+    border: var(--border);
+    border-radius: 0.5rem;
+    width: 250px;
+}
+
+.record-count {
+    font-size: 1.2rem;
+    color: var(--light-color);
+    background: var(--bg-color);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+}
+
+/* Audit Table */
+#audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+}
+
+#audit-table th {
+    background: var(--main-color);
+    color: var(--white);
+    padding: 1rem;
+    font-weight: 600;
+    text-align: left;
+    position: sticky;
+    top: 0;
+}
+
+#audit-table td {
+    padding: 1rem;
+    border-bottom: var(--border);
+    color: var(--black);
+}
+
+#audit-table tbody tr:hover {
+    background: var(--bg-color);
+}
+
+#audit-table .debit {
+    color: #28a745;
+    font-weight: 600;
+}
+
+#audit-table .credit {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Badge Styles */
+.audit-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.audit-badge.payment {
+    background: #ffc107;
+    color: #000;
+}
+
+.audit-badge.receipt {
+    background: #28a745;
+    color: #fff;
+}
+
+.audit-badge.journal {
+    background: #17a2b8;
+    color: #fff;
+}
+
+/* Ledger Activity Table */
+.ledger-activity {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 2rem;
+}
+
+.ledger-activity h3 {
+    font-size: 2rem;
+    color: var(--black);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ledger-activity h3 i {
+    color: var(--main-color);
+}
+
+#ledger-activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+}
+
+#ledger-activity-table th {
+    background: var(--main-color);
+    color: var(--white);
+    padding: 1rem;
+    text-align: left;
+}
+
+#ledger-activity-table td {
+    padding: 0.8rem;
+    border-bottom: var(--border);
+}
+
+#ledger-activity-table tbody tr:hover {
+    background: var(--bg-color);
+}
+
+/* Audit Summary Report */
+.audit-log-summary {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--box-shadow);
+}
+
+.audit-log-summary h3 {
+    font-size: 2rem;
+    color: var(--black);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.audit-log-summary h3 i {
+    color: var(--main-color);
+}
+
+.audit-summary-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.summary-section {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.summary-section h4 {
+    font-size: 1.6rem;
+    color: var(--main-color);
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--main-color);
+    padding-bottom: 0.5rem;
+}
+
+.summary-section p {
+    font-size: 1.4rem;
+    color: var(--black);
+    line-height: 1.6;
+}
+
+.summary-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.summary-section li {
+    font-size: 1.3rem;
+    color: var(--light-color);
+    padding: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed #ddd;
+}
+
+.summary-section li span {
+    font-weight: bold;
+}
+
+.integrity-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.integrity-check.passed {
+    color: #28a745;
+}
+
+.integrity-check.failed {
+    color: #dc3545;
+}
+
+.integrity-check i {
+    font-size: 1.4rem;
+}
+
+/* Print Styles */
+@media print {
+    .header,
+    .footer,
+    .audit-controls,
+    .audit-actions,
+    .audit-analytics,
+    .table-controls input,
+    .btn {
+        display: none !important;
+    }
+    
+    .audit-section {
+        padding: 0;
+    }
+    
+    .audit-trail-table,
+    .ledger-activity,
+    .audit-log-summary {
+        box-shadow: none;
+        padding: 0;
+    }
+    
+    .summary-card {
+        break-inside: avoid;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .audit-section {
+        padding: 1rem;
+    }
+    
+    .date-range,
+    .audit-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-range .form-group,
+    .audit-filters .form-group {
+        width: 100%;
+    }
+    
+    .audit-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .audit-analytics {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .table-controls input {
+        width: 100%;
+    }
+    
+    #audit-table {
+        font-size: 1.1rem;
+    }
+    
+    #audit-table th,
+    #audit-table td {
+        padding: 0.5rem;
+    }
+    
+    .audit-summary-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 450px) {
+    .audit-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-card {
+        padding: 1rem;
+    }
+    
+    .summary-card i {
+        font-size: 2rem;
+    }
+    
+    .summary-info h3 {
+        font-size: 1.8rem;
+    }
+}

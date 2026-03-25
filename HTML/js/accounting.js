@@ -167,6 +167,575 @@ const ledgerSubGroups = {
     ]
 };
 
+// ==================== MULTI-CURRENCY SYSTEM ====================
+
+// Currency settings
+let currencySettings = JSON.parse(localStorage.getItem('currencySettings')) || {
+    baseCurrency: 'BDT',           // Default base currency
+    displayCurrency: 'BDT',        // Currency to display in UI
+    autoConvert: true,              // Auto-convert amounts on display
+    decimalPlaces: 2,              // Number of decimal places
+    thousandSeparator: ',',        // Thousand separator
+    decimalSeparator: '.'          // Decimal separator
+};
+
+// Available currencies with exchange rates (relative to base currency)
+let currencies = JSON.parse(localStorage.getItem('currencies')) || {
+    'BDT': { 
+        symbol: '৳', 
+        name: 'Bangladeshi Taka', 
+        rate: 1.00,
+        code: 'BDT',
+        flag: '🇧🇩'
+    },
+    'USD': { 
+        symbol: '$', 
+        name: 'US Dollar', 
+        rate: 0.0091,
+        code: 'USD',
+        flag: '🇺🇸'
+    },
+    'EUR': { 
+        symbol: '€', 
+        name: 'Euro', 
+        rate: 0.0084,
+        code: 'EUR',
+        flag: '🇪🇺'
+    },
+    'GBP': { 
+        symbol: '£', 
+        name: 'British Pound', 
+        rate: 0.0072,
+        code: 'GBP',
+        flag: '🇬🇧'
+    },
+    'INR': { 
+        symbol: '₹', 
+        name: 'Indian Rupee', 
+        rate: 0.76,
+        code: 'INR',
+        flag: '🇮🇳'
+    },
+    'AED': { 
+        symbol: 'د.إ', 
+        name: 'UAE Dirham', 
+        rate: 0.033,
+        code: 'AED',
+        flag: '🇦🇪'
+    },
+    'SAR': { 
+        symbol: '﷼', 
+        name: 'Saudi Riyal', 
+        rate: 0.034,
+        code: 'SAR',
+        flag: '🇸🇦'
+    },
+    'SGD': { 
+        symbol: 'S$', 
+        name: 'Singapore Dollar', 
+        rate: 0.012,
+        code: 'SGD',
+        flag: '🇸🇬'
+    },
+    'MYR': { 
+        symbol: 'RM', 
+        name: 'Malaysian Ringgit', 
+        rate: 0.043,
+        code: 'MYR',
+        flag: '🇲🇾'
+    },
+    'JPY': { 
+        symbol: '¥', 
+        name: 'Japanese Yen', 
+        rate: 1.37,
+        code: 'JPY',
+        flag: '🇯🇵'
+    },
+    'CNY': { 
+        symbol: '¥', 
+        name: 'Chinese Yuan', 
+        rate: 0.066,
+        code: 'CNY',
+        flag: '🇨🇳'
+    },
+    'CAD': { 
+        symbol: 'C$', 
+        name: 'Canadian Dollar', 
+        rate: 0.012,
+        code: 'CAD',
+        flag: '🇨🇦'
+    },
+    'AUD': { 
+        symbol: 'A$', 
+        name: 'Australian Dollar', 
+        rate: 0.014,
+        code: 'AUD',
+        flag: '🇦🇺'
+    }
+};
+
+// Exchange rate history for tracking rate changes
+let exchangeRateHistory = JSON.parse(localStorage.getItem('exchangeRateHistory')) || [];
+
+// Currency exchange rate update timestamp
+let lastRateUpdate = JSON.parse(localStorage.getItem('lastRateUpdate')) || null;
+
+// ==================== CURRENCY FUNCTIONS ====================
+
+/**
+ * Format amount with currency symbol and proper formatting
+ * @param {number} amount - The amount to format
+ * @param {string} currencyCode - Currency code (optional, uses display currency)
+ * @returns {string} Formatted currency string
+ */
+function formatCurrency(amount, currencyCode = null) {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+        return '0.00';
+    }
+    
+    const currency = currencyCode ? currencies[currencyCode] : currencies[currencySettings.displayCurrency];
+    if (!currency) return amount.toFixed(2);
+    
+    // Apply decimal places
+    let formattedAmount = amount.toFixed(currencySettings.decimalPlaces);
+    
+    // Add thousand separators
+    if (currencySettings.thousandSeparator !== '') {
+        const parts = formattedAmount.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, currencySettings.thousandSeparator);
+        formattedAmount = parts.join(currencySettings.decimalSeparator);
+    }
+    
+    // Return with symbol
+    return `${currency.symbol} ${formattedAmount}`;
+}
+
+/**
+ * Convert amount from one currency to another
+ * @param {number} amount - Amount to convert
+ * @param {string} fromCurrency - Source currency code
+ * @param {string} toCurrency - Target currency code
+ * @returns {number} Converted amount
+ */
+function convertCurrency(amount, fromCurrency, toCurrency) {
+    if (fromCurrency === toCurrency) return amount;
+    
+    const fromRate = currencies[fromCurrency]?.rate || 1;
+    const toRate = currencies[toCurrency]?.rate || 1;
+    
+    // First convert to base currency, then to target
+    const inBase = amount / fromRate;
+    const converted = inBase * toRate;
+    
+    return parseFloat(converted.toFixed(currencySettings.decimalPlaces));
+}
+
+/**
+ * Update exchange rates for a currency
+ * @param {string} currencyCode - Currency to update
+ * @param {number} newRate - New exchange rate
+ */
+function updateExchangeRate(currencyCode, newRate) {
+    if (!currencies[currencyCode]) {
+        showNotification(`Currency ${currencyCode} not found`, 'error');
+        return;
+    }
+    
+    const oldRate = currencies[currencyCode].rate;
+    currencies[currencyCode].rate = newRate;
+    
+    // Save to history
+    exchangeRateHistory.push({
+        currency: currencyCode,
+        oldRate: oldRate,
+        newRate: newRate,
+        date: new Date().toISOString()
+    });
+    
+    // Keep only last 100 rate changes
+    if (exchangeRateHistory.length > 100) {
+        exchangeRateHistory = exchangeRateHistory.slice(-100);
+    }
+    
+    localStorage.setItem('currencies', JSON.stringify(currencies));
+    localStorage.setItem('exchangeRateHistory', JSON.stringify(exchangeRateHistory));
+    localStorage.setItem('lastRateUpdate', new Date().toISOString());
+    
+    showNotification(`${currencyCode} rate updated to ${newRate}`, 'success');
+    
+    // Refresh displayed amounts
+    refreshCurrencyDisplay();
+}
+
+/**
+ * Refresh all currency displays on the page
+ */
+function refreshCurrencyDisplay() {
+    // Update all amount displays
+    document.querySelectorAll('.currency-amount, .debit, .credit, .amount, .value').forEach(el => {
+        const originalAmount = parseFloat(el.getAttribute('data-original-amount'));
+        if (!isNaN(originalAmount)) {
+            el.textContent = formatCurrency(originalAmount);
+        }
+    });
+    
+    // Update summary cards
+    updateCurrencySummaries();
+}
+
+/**
+ * Update summary cards with converted amounts
+ */
+function updateCurrencySummaries() {
+    const summaryElements = {
+        'total-income': null,
+        'total-expense': null,
+        'cash-balance': null,
+        'bank-balance': null
+    };
+    
+    Object.keys(summaryElements).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const original = parseFloat(el.getAttribute('data-original'));
+            if (!isNaN(original)) {
+                el.textContent = formatCurrency(original);
+            }
+        }
+    });
+}
+
+/**
+ * Show currency selection modal - FIXED POSITION
+ */
+function showCurrencyModal() {
+    console.log('Opening currency modal');
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('currency-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Create modal HTML with proper structure
+    const modalHTML = `
+        <div id="currency-modal" class="modal" style="display: flex;">
+            <div class="modal-content" style="max-width: 550px; margin: auto;">
+                <span class="close-modal" onclick="closeCurrencyModal()">&times;</span>
+                <h3><i class="fas fa-money-bill-wave"></i> Currency Settings</h3>
+                
+                <div class="currency-settings" style="max-height: 60vh; overflow-y: auto; padding-right: 0.5rem;">
+                    <div class="setting-group" style="margin-bottom: 1.5rem;">
+                        <label for="base-currency" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Base Currency:</label>
+                        <select id="base-currency" onchange="updateBaseCurrency()" style="width: 100%; padding: 0.8rem;">
+                            ${Object.keys(currencies).map(code => `
+                                <option value="${code}" ${currencySettings.baseCurrency === code ? 'selected' : ''}>
+                                    ${currencies[code].flag} ${code} - ${currencies[code].name}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <p class="setting-hint" style="font-size: 1.1rem; color: var(--light-color); margin-top: 0.3rem;">All transactions are stored in this currency</p>
+                    </div>
+                    
+                    <div class="setting-group" style="margin-bottom: 1.5rem;">
+                        <label for="display-currency" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Display Currency:</label>
+                        <select id="display-currency" onchange="updateDisplayCurrency()" style="width: 100%; padding: 0.8rem;">
+                            ${Object.keys(currencies).map(code => `
+                                <option value="${code}" ${currencySettings.displayCurrency === code ? 'selected' : ''}>
+                                    ${currencies[code].flag} ${code} - ${currencies[code].name}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <p class="setting-hint" style="font-size: 1.1rem; color: var(--light-color); margin-top: 0.3rem;">Amounts will be shown in this currency</p>
+                    </div>
+                    
+                    <div class="setting-group" style="margin-bottom: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="auto-convert" ${currencySettings.autoConvert ? 'checked' : ''} 
+                                   onchange="toggleAutoConvert()">
+                            Auto-convert amounts on display
+                        </label>
+                    </div>
+                    
+                    <div class="setting-group" style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Format Settings:</label>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <select id="decimal-places" onchange="updateFormatSettings()" style="padding: 0.6rem;">
+                                <option value="0" ${currencySettings.decimalPlaces === 0 ? 'selected' : ''}>0 decimals</option>
+                                <option value="2" ${currencySettings.decimalPlaces === 2 ? 'selected' : ''}>2 decimals</option>
+                                <option value="3" ${currencySettings.decimalPlaces === 3 ? 'selected' : ''}>3 decimals</option>
+                                <option value="4" ${currencySettings.decimalPlaces === 4 ? 'selected' : ''}>4 decimals</option>
+                            </select>
+                            <input type="text" id="thousand-separator" value="${currencySettings.thousandSeparator}" 
+                                   placeholder="Thousand" style="width: 80px; padding: 0.6rem;">
+                            <input type="text" id="decimal-separator" value="${currencySettings.decimalSeparator}" 
+                                   placeholder="Decimal" style="width: 80px; padding: 0.6rem;">
+                        </div>
+                    </div>
+                    
+                    <div class="exchange-rates" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.1);">
+                        <h4 style="margin-bottom: 1rem;"><i class="fas fa-chart-line"></i> Exchange Rates</h4>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                            <table style="width: 100%; font-size: 1.3rem;">
+                                <thead>
+                                    <tr style="background: var(--main-color); color: white;">
+                                        <th style="padding: 0.6rem;">Currency</th>
+                                        <th style="padding: 0.6rem;">Rate (1 ${currencySettings.baseCurrency})</th>
+                                        <th style="padding: 0.6rem;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Object.keys(currencies).map(code => `
+                                        <tr>
+                                            <td style="padding: 0.5rem;">${currencies[code].flag} ${code}</td>
+                                            <td style="padding: 0.5rem;">
+                                                <input type="number" id="rate-${code}" value="${currencies[code].rate}" 
+                                                       step="0.0001" style="width: 90px; padding: 0.4rem;">
+                                            </td>
+                                            <td style="padding: 0.5rem;">
+                                                <button class="btn small-btn" onclick="updateExchangeRate('${code}', 
+                                                    parseFloat(document.getElementById('rate-${code}').value))" 
+                                                    style="padding: 0.3rem 0.8rem; font-size: 1.1rem;">
+                                                    Update
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="setting-hint" style="font-size: 1rem; margin-top: 0.5rem;">
+                            Last updated: ${lastRateUpdate ? new Date(lastRateUpdate).toLocaleString() : 'Never'}
+                        </p>
+                        <button class="btn" onclick="fetchLiveExchangeRates()" style="margin-top: 0.5rem; width: 100%;">
+                            <i class="fas fa-cloud-download-alt"></i> Fetch Live Rates
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="modal-btns" style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button class="btn cancel-btn" onclick="closeCurrencyModal()" style="background: #6c757d;">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add click outside to close
+    const modal = document.getElementById('currency-modal');
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeCurrencyModal();
+        }
+    });
+    
+    // Add escape key handler
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeCurrencyModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+/**
+ * Close currency modal
+ */
+function closeCurrencyModal() {
+    const modal = document.getElementById('currency-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+/**
+ * Update base currency
+ */
+function updateBaseCurrency() {
+    const newBase = document.getElementById('base-currency').value;
+    const oldBase = currencySettings.baseCurrency;
+    
+    if (newBase === oldBase) return;
+    
+    // Recalculate all exchange rates relative to new base
+    const oldBaseRate = currencies[oldBase].rate;
+    
+    Object.keys(currencies).forEach(code => {
+        // Convert from old base to new base
+        currencies[code].rate = currencies[code].rate / oldBaseRate;
+    });
+    
+    currencySettings.baseCurrency = newBase;
+    
+    localStorage.setItem('currencies', JSON.stringify(currencies));
+    localStorage.setItem('currencySettings', JSON.stringify(currencySettings));
+    
+    showNotification(`Base currency changed to ${newBase}`, 'success');
+    refreshCurrencyDisplay();
+}
+
+/**
+ * Update display currency
+ */
+function updateDisplayCurrency() {
+    const newDisplay = document.getElementById('display-currency').value;
+    currencySettings.displayCurrency = newDisplay;
+    localStorage.setItem('currencySettings', JSON.stringify(currencySettings));
+    
+    showNotification(`Display currency changed to ${newDisplay}`, 'success');
+    refreshCurrencyDisplay();
+}
+
+/**
+ * Toggle auto-convert setting
+ */
+function toggleAutoConvert() {
+    const autoConvert = document.getElementById('auto-convert').checked;
+    currencySettings.autoConvert = autoConvert;
+    localStorage.setItem('currencySettings', JSON.stringify(currencySettings));
+    
+    showNotification(`Auto-convert ${autoConvert ? 'enabled' : 'disabled'}`, 'info');
+    refreshCurrencyDisplay();
+}
+
+/**
+ * Update format settings
+ */
+function updateFormatSettings() {
+    const decimalPlaces = parseInt(document.getElementById('decimal-places').value);
+    const thousandSeparator = document.getElementById('thousand-separator').value;
+    const decimalSeparator = document.getElementById('decimal-separator').value;
+    
+    currencySettings.decimalPlaces = decimalPlaces;
+    currencySettings.thousandSeparator = thousandSeparator;
+    currencySettings.decimalSeparator = decimalSeparator;
+    
+    localStorage.setItem('currencySettings', JSON.stringify(currencySettings));
+    
+    showNotification('Format settings updated', 'success');
+    refreshCurrencyDisplay();
+}
+
+/**
+ * Fetch live exchange rates from API (optional)
+ */
+async function fetchLiveExchangeRates() {
+    showNotification('Fetching live exchange rates...', 'info');
+    
+    try {
+        // Using free API - you can replace with your preferred API
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/BDT');
+        const data = await response.json();
+        
+        if (data && data.rates) {
+            Object.keys(currencies).forEach(code => {
+                if (data.rates[code]) {
+                    currencies[code].rate = data.rates[code];
+                }
+            });
+            
+            localStorage.setItem('currencies', JSON.stringify(currencies));
+            lastRateUpdate = new Date().toISOString();
+            localStorage.setItem('lastRateUpdate', lastRateUpdate);
+            
+            showNotification('Exchange rates updated successfully!', 'success');
+            refreshCurrencyDisplay();
+        }
+    } catch (error) {
+        console.error('Failed to fetch exchange rates:', error);
+        showNotification('Failed to fetch live rates. Using stored rates.', 'error');
+    }
+}
+
+/**
+ * Add currency selector to forms
+ */
+function addCurrencySelector() {
+    // Add currency selector to payment and receipt forms
+    ['payment', 'receipt'].forEach(type => {
+        const amountGroup = document.querySelector(`#${type} .amount-group`);
+        if (amountGroup && !document.getElementById(`${type}-currency`)) {
+            const currencySelector = document.createElement('div');
+            currencySelector.className = 'currency-selector';
+            currencySelector.style.marginBottom = '1rem';
+            currencySelector.innerHTML = `
+                <label for="${type}-currency"><i class="fas fa-globe"></i> Currency:</label>
+                <select id="${type}-currency" class="currency-select" onchange="handleCurrencyChange('${type}')">
+                    ${Object.keys(currencies).map(code => `
+                        <option value="${code}" ${currencySettings.displayCurrency === code ? 'selected' : ''}>
+                            ${currencies[code].flag} ${code} - ${currencies[code].name}
+                        </option>
+                    `).join('')}
+                </select>
+            `;
+            amountGroup.parentNode.insertBefore(currencySelector, amountGroup);
+        }
+    });
+}
+
+/**
+ * Handle currency change in forms
+ */
+function handleCurrencyChange(type) {
+    const currencySelect = document.getElementById(`${type}-currency`);
+    const amountInput = document.getElementById(`${type}-amount`);
+    
+    if (currencySelect && amountInput && amountInput.value) {
+        const amount = parseFloat(amountInput.value);
+        const currency = currencySelect.value;
+        
+        // Convert to display currency
+        const converted = convertCurrency(amount, currency, currencySettings.displayCurrency);
+        
+        // Show conversion info
+        const conversionInfo = document.getElementById(`${type}-conversion-info`);
+        if (conversionInfo) {
+            conversionInfo.innerHTML = `
+                <small style="color: var(--light-color);">
+                    ≈ ${formatCurrency(converted)}
+                </small>
+            `;
+        }
+    }
+}
+
+/**
+ * Initialize currency system
+ */
+function initCurrencySystem() {
+    console.log('Initializing multi-currency system...');
+    
+    // Add currency selector to forms
+    addCurrencySelector();
+    
+    // Update all currency displays
+    refreshCurrencyDisplay();
+    
+    // Add currency button to header
+    addCurrencyButton();
+}
+
+/**
+ * Add currency button to header
+ */
+function addCurrencyButton() {
+    const headerControls = document.querySelector('.dark-mode-controls');
+    if (headerControls && !document.getElementById('currency-btn')) {
+        const currencyBtn = document.createElement('div');
+        currencyBtn.id = 'currency-btn';
+        currencyBtn.className = 'currency-btn';
+        currencyBtn.innerHTML = `<i class="fas fa-money-bill-wave"></i> ${currencySettings.displayCurrency}`;
+        currencyBtn.title = 'Currency Settings';
+        currencyBtn.onclick = () => showCurrencyModal();
+        
+        headerControls.insertBefore(currencyBtn, headerControls.firstChild);
+    }
+}
+
 // ==================== BALANCE TRACKING FUNCTIONS ====================
 
 function getCurrentBalances() {
@@ -677,6 +1246,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateVoucherNumbers();
     addDeleteAllButton();
     
+    
     // Add click outside to close modals
     window.onclick = function(event) {
         const manageModal = document.getElementById('manage-ledgers-modal');
@@ -691,6 +1261,57 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.target === bankModal) closeBankModal();
         if (event.target === subgroupModal) closeSubGroupModal();
     };
+    initBackupSystem();
+
+    const restoreInput = document.getElementById('restore-file-input');
+    if (restoreInput) {
+        // Remove any existing listeners to avoid duplicates
+        const newRestoreInput = restoreInput.cloneNode(true);
+        restoreInput.parentNode.replaceChild(newRestoreInput, restoreInput);
+        
+        newRestoreInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                console.log('Restore file selected:', file.name);
+                
+                // Check if it's a JSON file
+                if (!file.name.endsWith('.json')) {
+                    showNotification('Please select a JSON backup file', 'error');
+                    this.value = '';
+                    return;
+                }
+                
+                // Call restore function
+                restoreData(file);
+                this.value = ''; // Reset input so same file can be selected again
+            }
+        });
+    } else {
+        console.warn('Restore file input not found in DOM');
+    }
+    // Setup global keyboard shortcuts
+    setupGlobalKeyboardShortcuts();
+    
+    // Add floating help button
+    addFloatingHelpButton();
+    
+    // Setup click outside to close shortcuts modal
+    const shortcutsModal = document.getElementById('shortcuts-modal');
+    if (shortcutsModal) {
+        // If window.onclick is already defined, we need to preserve it
+        const existingOnClick = window.onclick;
+        window.onclick = function(event) {
+            // Call existing onclick if it exists
+            if (existingOnClick) existingOnclick(event);
+            
+            // Handle shortcuts modal close
+            if (event.target === shortcutsModal) {
+                closeShortcutsModal();
+            }
+        };
+    }
+    
+    console.log('Keyboard shortcuts system initialized');
 });
 
 function addDeleteAllButton() {
@@ -1049,7 +1670,7 @@ function closeBankModal() {
     if (bankSelect) bankSelect.focus();
 }
 
-// Create new bank
+// Replace the createNewBank function in accounting.js
 function createNewBank() {
     const name = document.getElementById('modal-bank-name').value.trim();
     const accountNo = document.getElementById('modal-bank-account').value.trim();
@@ -1092,26 +1713,40 @@ function createNewBank() {
     banks.push(newBank);
     localStorage.setItem('banks', JSON.stringify(banks));
     
-    // Also add as ledger if not exists - NOW WITH SUBGROUP
+    // Also add as ledger if not exists
     if (!ledgers.some(l => l.name === bankName)) {
         const newLedger = {
             id: ledgers.length + 1,
             name: bankName,
             type: 'asset',
             category: 'bank',
-            group: 'current_asset'  // ADDED: Set subgroup to Current Asset
+            group: 'current_asset'
         };
         ledgers.push(newLedger);
         localStorage.setItem('ledgers', JSON.stringify(ledgers));
-        updateAllLedgerDropdowns();
     }
     
-    updateBankDropdowns();
+    // ===== FIX: Update bank dropdowns and datalists =====
+    updateBankDropdowns();           // Update select dropdowns
+    updateBankDatalist('payment');   // Update payment bank datalist
+    updateBankDatalist('receipt');   // Update receipt bank datalist
+    updateAllLedgerDropdowns();      // Update ledger dropdowns
+    updateAllJournalLedgerDatalists(); // Update journal datalists
     
     // Select the new bank
-    document.getElementById(`${entryType}-bank`).value = bankName;
-    handleBankSelect(entryType);
+    const bankSelect = document.getElementById(`${entryType}-bank`);
+    const bankInput = document.getElementById(`${entryType}-bank-input`);
     
+    if (bankSelect) {
+        bankSelect.value = bankName;
+    }
+    if (bankInput) {
+        bankInput.value = displayName;
+        const bankHidden = document.getElementById(`${entryType}-bank`);
+        if (bankHidden) bankHidden.value = bankName;
+    }
+    
+    handleBankSelect(entryType);
     closeBankModal();
 }
 
@@ -2228,6 +2863,15 @@ function updateAllLedgerDropdowns() {
     updateLedgerDropdown('payment');
     updateLedgerDropdown('receipt');
     updateJournalLedgerDropdowns();
+    
+    // Also update datalists
+    if (typeof updateLedgerDatalist === 'function') {
+        updateLedgerDatalist('payment');
+        updateLedgerDatalist('receipt');
+    }
+    if (typeof updateAllJournalLedgerDatalists === 'function') {
+        updateAllJournalLedgerDatalists();
+    }
 }
 
 function updateLedgerDropdown(type) {
@@ -3180,7 +3824,8 @@ function closeModal() {
     }
 }
 
-    function createNewLedger() {
+// Replace the createNewLedger function in accounting.js
+function createNewLedger() {
     const name = document.getElementById('modal-ledger-name').value.trim();
     const type = document.getElementById('modal-ledger-type').value;
     const group = document.getElementById('modal-ledger-group').value;
@@ -3218,22 +3863,20 @@ function closeModal() {
     // Auto-set category and group based on name patterns
     if (name.toLowerCase().includes('bank')) {
         category = 'bank';
-        assignedGroup = 'current_asset';  // Banks go to Current Asset
+        assignedGroup = 'current_asset';
     } else if (type === 'asset' && name.toLowerCase().includes('cash')) {
         category = 'cash';
-        assignedGroup = 'current_asset';  // Cash goes to Current Asset
+        assignedGroup = 'current_asset';
     } else if (type === 'asset' && name.toLowerCase().includes('receivable')) {
         category = 'receivable';
-        assignedGroup = 'receivable';  // Accounts Receivable
+        assignedGroup = 'receivable';
     } else if (type === 'liability' && name.toLowerCase().includes('payable')) {
         category = 'payable';
-        assignedGroup = 'payable';  // Accounts Payable
+        assignedGroup = 'payable';
     } else if (type === 'expense') {
         category = 'expense';
-        // Keep user-selected group or default to empty
     } else if (type === 'income') {
         category = 'income';
-        // Keep user-selected group or default to empty
     }
     
     // Make sure ledgers is an array before pushing
@@ -3244,25 +3887,38 @@ function closeModal() {
         name: name.toLowerCase(),
         type: type,
         category: category,
-        group: assignedGroup || ''  // Use assigned group or empty string
+        group: assignedGroup || ''
     };
     
     ledgers.push(newLedger);
     localStorage.setItem('ledgers', JSON.stringify(ledgers));
-    updateAllLedgerDropdowns();
+    
+    // ===== FIX: Update all dropdowns and datalists =====
+    updateAllLedgerDropdowns();              // Update select dropdowns
+    updateLedgerDatalist('payment');         // Update payment ledger datalist
+    updateLedgerDatalist('receipt');         // Update receipt ledger datalist
+    updateAllJournalLedgerDatalists();       // Update all journal datalists
     
     if(entryType === 'payment' || entryType === 'receipt') {
         const ledgerSelect = document.getElementById(`${entryType}-ledger`);
+        const ledgerInput = document.getElementById(`${entryType}-ledger-input`);
+        
         if (ledgerSelect) {
             ledgerSelect.value = newLedger.id;
-            handleLedgerSelect(entryType);
         }
+        if (ledgerInput) {
+            ledgerInput.value = newLedger.name;
+            const ledgerHidden = document.getElementById(`${entryType}-ledger`);
+            if (ledgerHidden) ledgerHidden.value = newLedger.id;
+        }
+        handleLedgerSelect(entryType);
     } else if(entryType === 'journal' && rowId !== '') {
         const rows = document.querySelectorAll('.journal-entry-row');
         const targetRow = rows[parseInt(rowId)];
         
         if(targetRow) {
             const select = targetRow.querySelector('.journal-ledger-select');
+            const ledgerInput = targetRow.querySelector('.journal-ledger-input');
             const newLedgerBtn = targetRow.querySelector('.journal-new-ledger-btn');
             const newLedgerGroup = targetRow.querySelector('.journal-new-ledger-input-group');
             
@@ -3270,6 +3926,11 @@ function closeModal() {
                 select.value = newLedger.id;
                 select.style.display = 'block';
                 select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            if(ledgerInput) {
+                ledgerInput.value = newLedger.name;
+                ledgerInput.style.display = 'block';
             }
             
             if(newLedgerBtn) newLedgerBtn.style.display = 'block';
@@ -4132,6 +4793,1649 @@ function showReport(type) {
 
 function validateForm(type) {}
 
+// ==================== DATA BACKUP & RESTORE SYSTEM ====================
+
+// Backup settings - stores user preferences
+let backupSettings = JSON.parse(localStorage.getItem('backupSettings')) || {
+    enabled: false,      // Auto backup on/off
+    frequency: 'weekly', // daily, weekly, monthly
+    retention: 30,       // Keep backups for X days
+    lastBackup: null     // Date of last backup
+};
+
+// Backup history - list of all backups created
+let backupHistory = JSON.parse(localStorage.getItem('backupHistory')) || [];
+
+// Initialize backup system when page loads
+function initBackupSystem() {
+    console.log('Initializing backup system...');
+    
+    // Load backup settings into the UI
+    const autoBackupCheckbox = document.getElementById('auto-backup-enable');
+    const frequencySelect = document.getElementById('backup-frequency');
+    const retentionSelect = document.getElementById('backup-retention');
+    
+    if (autoBackupCheckbox) {
+        autoBackupCheckbox.checked = backupSettings.enabled;
+        console.log('Auto backup checkbox set to:', backupSettings.enabled);
+    }
+    if (frequencySelect) {
+        frequencySelect.value = backupSettings.frequency;
+        console.log('Frequency set to:', backupSettings.frequency);
+    }
+    if (retentionSelect) {
+        retentionSelect.value = backupSettings.retention;
+        console.log('Retention set to:', backupSettings.retention);
+    }
+    
+    // Update the "Last backup" info display
+    updateLastBackupInfo();
+    
+    // Load and display backup history table
+    loadBackupHistory();
+    
+    // Check if we need to run auto backup
+    if (backupSettings.enabled) {
+        checkAndRunAutoBackup();
+    }
+}
+
+// Update the "Last backup" info text
+function updateLastBackupInfo() {
+    const lastBackupSpan = document.getElementById('last-backup-info');
+    if (!lastBackupSpan) return;
+    
+    if (backupSettings.lastBackup) {
+        const lastBackupDate = new Date(backupSettings.lastBackup);
+        const formattedDate = formatDateTime(lastBackupDate);
+        lastBackupSpan.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> Last backup: ${formattedDate}`;
+    } else {
+        lastBackupSpan.innerHTML = `<i class="fas fa-info-circle"></i> No backup yet`;
+    }
+}
+
+// Check if it's time for auto backup and run if needed
+function checkAndRunAutoBackup() {
+    if (!backupSettings.enabled) return;
+    
+    const now = new Date();
+    const lastBackup = backupSettings.lastBackup ? new Date(backupSettings.lastBackup) : null;
+    
+    let shouldBackup = false;
+    
+    if (!lastBackup) {
+        // Never backed up before - do it now
+        shouldBackup = true;
+        console.log('No previous backup found, running auto backup...');
+    } else {
+        // Calculate days since last backup
+        const daysSinceBackup = Math.floor((now - lastBackup) / (1000 * 60 * 60 * 24));
+        console.log('Days since last backup:', daysSinceBackup);
+        
+        // Check based on frequency setting
+        switch(backupSettings.frequency) {
+            case 'daily':
+                shouldBackup = daysSinceBackup >= 1;
+                break;
+            case 'weekly':
+                shouldBackup = daysSinceBackup >= 7;
+                break;
+            case 'monthly':
+                shouldBackup = daysSinceBackup >= 30;
+                break;
+        }
+    }
+    
+    if (shouldBackup) {
+        console.log('Running auto backup...');
+        performAutoBackup();
+    }
+}
+
+// Perform automatic backup (runs in background)
+function performAutoBackup() {
+    // Collect all data for backup
+    const backupData = {
+        transactions: transactions,
+        ledgers: ledgers,
+        banks: banks,
+        customSubGroups: customSubGroups,
+        backupDate: new Date().toISOString(),
+        version: '1.0',
+        stats: {
+            totalTransactions: transactions.length,
+            totalLedgers: ledgers.length,
+            totalBanks: banks.length
+        }
+    };
+    
+    const backupName = `auto-backup-${new Date().toISOString().split('T')[0]}.json`;
+    const backupSize = JSON.stringify(backupData).length;
+    
+    console.log('Auto backup created:', backupName);
+    
+    // Save to backup history
+    const backupRecord = {
+        id: Date.now(),
+        name: backupName,
+        date: new Date().toISOString(),
+        size: backupSize,
+        type: 'auto',
+        stats: backupData.stats
+    };
+    
+    backupHistory.unshift(backupRecord);
+    
+    // Remove old backups based on retention setting
+    const retentionDays = backupSettings.retention;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+    
+    const oldCount = backupHistory.length;
+    backupHistory = backupHistory.filter(b => new Date(b.date) > cutoffDate);
+    console.log(`Removed ${oldCount - backupHistory.length} old backups`);
+    
+    // Keep only last 10 auto backups
+    if (backupHistory.length > 10) {
+        backupHistory = backupHistory.slice(0, 10);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('backupHistory', JSON.stringify(backupHistory));
+    
+    // Update last backup time
+    backupSettings.lastBackup = new Date().toISOString();
+    localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
+    
+    // Update UI
+    updateLastBackupInfo();
+    loadBackupHistory();
+}
+
+// Manual backup - downloads a JSON file
+function backupData() {
+    try {
+        console.log('Creating manual backup...');
+        
+        // Prepare backup data
+        const backupData = {
+            transactions: transactions,
+            ledgers: ledgers,
+            banks: banks,
+            customSubGroups: customSubGroups,
+            backupDate: new Date().toISOString(),
+            version: '1.0',
+            stats: {
+                totalTransactions: transactions.length,
+                totalLedgers: ledgers.length,
+                totalBanks: banks.length,
+                totalSubgroups: customSubGroups.length
+            }
+        };
+        
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const filename = `accounting-backup-${timestamp}.json`;
+        
+        // Convert to JSON string with pretty formatting
+        const jsonString = JSON.stringify(backupData, null, 2);
+        
+        // Create blob and download
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('Manual backup created:', filename, 'Size:', blob.size, 'bytes');
+        
+        // Add to backup history
+        const backupRecord = {
+            id: Date.now(),
+            name: filename,
+            date: new Date().toISOString(),
+            size: blob.size,
+            type: 'manual',
+            stats: backupData.stats
+        };
+        
+        backupHistory.unshift(backupRecord);
+        
+        // Keep only last 20 backups
+        if (backupHistory.length > 20) {
+            backupHistory = backupHistory.slice(0, 20);
+        }
+        
+        localStorage.setItem('backupHistory', JSON.stringify(backupHistory));
+        loadBackupHistory();
+        
+        // Update last backup time
+        backupSettings.lastBackup = new Date().toISOString();
+        localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
+        updateLastBackupInfo();
+        
+        // Show success message
+        showNotification(`Backup created successfully! (${formatFileSize(blob.size)})`, 'success');
+        
+    } catch (error) {
+        console.error('Backup failed:', error);
+        showNotification('Backup failed: ' + error.message, 'error');
+    }
+}
+
+// ==================== COMPLETE RESTORE FUNCTION ====================
+
+// Trigger the file input dialog
+function triggerRestore() {
+    console.log('Opening file selector for restore...');
+    // Clear the input value first to ensure change event fires even if selecting same file
+    const fileInput = document.getElementById('restore-file-input');
+    if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+    } else {
+        console.error('Restore file input not found');
+        showNotification('Restore file input not found', 'error');
+    }
+}
+
+// Restore data from backup file - COMPLETE VERSION
+function restoreData(file) {
+    console.log('Restoring from file:', file.name);
+    console.log('File size:', file.size, 'bytes');
+    
+    const reader = new FileReader();
+    
+    reader.onload = function(evt) {
+        try {
+            // Parse the JSON backup file
+            const backupData = JSON.parse(evt.target.result);
+            console.log('Backup file parsed successfully');
+            console.log('Backup contains:', {
+                transactions: backupData.transactions?.length || 0,
+                ledgers: backupData.ledgers?.length || 0,
+                banks: backupData.banks?.length || 0,
+                customSubGroups: backupData.customSubGroups?.length || 0,
+                backupDate: backupData.backupDate
+            });
+            
+            // Validate backup data structure
+            if (!backupData.transactions || !Array.isArray(backupData.transactions)) {
+                throw new Error('Invalid backup file: Missing or invalid transactions data');
+            }
+            
+            if (!backupData.ledgers || !Array.isArray(backupData.ledgers)) {
+                throw new Error('Invalid backup file: Missing or invalid ledgers data');
+            }
+            
+            // Create preview of what will be restored
+            const currentStats = {
+                transactions: window.transactions ? window.transactions.length : 0,
+                ledgers: window.ledgers ? window.ledgers.length : 0,
+                banks: window.banks ? window.banks.length : 0,
+                subgroups: window.customSubGroups ? window.customSubGroups.length : 0
+            };
+            
+            const backupStats = {
+                transactions: backupData.transactions.length,
+                ledgers: backupData.ledgers.length,
+                banks: backupData.banks ? backupData.banks.length : 0,
+                subgroups: backupData.customSubGroups ? backupData.customSubGroups.length : 0
+            };
+            
+            const message = `═══════════════════════════════════════
+⚠️ RESTORE CONFIRMATION ⚠️
+═══════════════════════════════════════
+
+This will REPLACE ALL current data with backup data:
+
+📊 CURRENT DATA:
+   • Transactions: ${currentStats.transactions}
+   • Ledgers: ${currentStats.ledgers}
+   • Banks: ${currentStats.banks}
+   • Subgroups: ${currentStats.subgroups}
+
+💾 BACKUP DATA (${formatDateFromBackup(backupData.backupDate)}):
+   • Transactions: ${backupStats.transactions}
+   • Ledgers: ${backupStats.ledgers}
+   • Banks: ${backupStats.banks}
+   • Subgroups: ${backupStats.subgroups}
+
+${backupStats.transactions > 0 ? '📝 Sample transactions:\n' + backupData.transactions.slice(0, 3).map(t => `   • ${t.date} - ${t.ledger} - ${t.debit > 0 ? 'Debit: ' + t.debit : 'Credit: ' + t.credit}`).join('\n') : ''}
+
+⚠️ WARNING: This action CANNOT be undone!
+═══════════════════════════════════════
+
+Are you sure you want to proceed?`;
+
+            // Show confirmation modal
+            showConfirmationModal(
+                'Restore Data',
+                message,
+                () => {
+                    // User confirmed - perform restore
+                    console.log('User confirmed restore, applying backup...');
+                    
+                    try {
+                        // Replace all global data
+                        window.transactions = backupData.transactions;
+                        window.ledgers = backupData.ledgers;
+                        window.banks = backupData.banks || [];
+                        window.customSubGroups = backupData.customSubGroups || [];
+                        
+                        // Save to localStorage
+                        localStorage.setItem('transactions', JSON.stringify(transactions));
+                        localStorage.setItem('ledgers', JSON.stringify(ledgers));
+                        localStorage.setItem('banks', JSON.stringify(banks));
+                        localStorage.setItem('customSubGroups', JSON.stringify(customSubGroups));
+                        
+                        console.log('Data restored successfully');
+                        console.log('New data count:', {
+                            transactions: transactions.length,
+                            ledgers: ledgers.length,
+                            banks: banks.length,
+                            subgroups: customSubGroups.length
+                        });
+                        
+                        // Show success message
+                        showNotification(`✅ Restore successful! Restored ${backupStats.transactions} transactions. Reloading page...`, 'success');
+                        
+                        // Reload page after 1.5 seconds to reflect changes
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                        
+                    } catch (error) {
+                        console.error('Error during restore:', error);
+                        showNotification('Error during restore: ' + error.message, 'error');
+                    }
+                },
+                () => {
+                    // User cancelled
+                    console.log('Restore cancelled by user');
+                    showNotification('Restore cancelled', 'info');
+                }
+            );
+            
+        } catch (error) {
+            console.error('Restore failed:', error);
+            showNotification('Invalid or corrupted backup file: ' + error.message, 'error');
+        }
+    };
+    
+    reader.onerror = function() {
+        console.error('Error reading file');
+        showNotification('Error reading file. Please try again.', 'error');
+    };
+    
+    reader.readAsText(file);
+}
+
+// Helper function to format date from backup
+function formatDateFromBackup(dateString) {
+    if (!dateString) return 'Unknown date';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        return date.toLocaleString();
+    } catch (e) {
+        return dateString;
+    }
+}
+// Load backup history table
+function loadBackupHistory() {
+    const tbody = document.getElementById('backup-history-body');
+    const historyContainer = document.querySelector('.backup-history');
+    
+    if (!tbody) {
+        console.log('Backup history table not found on this page');
+        return;
+    }
+    
+    // Hide history section if no backups
+    if (backupHistory.length === 0) {
+        if (historyContainer) {
+            historyContainer.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Show history section
+    if (historyContainer) {
+        historyContainer.style.display = 'block';
+    }
+    
+    // Build table rows
+    let html = '';
+    backupHistory.forEach(backup => {
+        const backupDate = new Date(backup.date);
+        const isRecent = (new Date() - backupDate) < 24 * 60 * 60 * 1000;
+        const formattedDate = formatDateTime(backupDate);
+        
+        html += `
+            <tr>
+                <td>${formattedDate} ${isRecent ? '<span class="recent-badge" style="background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px;">Recent</span>' : ''}</td>
+                <td style="font-family: monospace; font-size: 11px;">${backup.name}</td>
+                <td>${formatFileSize(backup.size)}</td>
+                <td>${backup.stats?.totalTransactions || 0}</td>
+                <td>
+                    <button class="restore-backup-btn" onclick="restoreFromHistory(${backup.id})">
+                        <i class="fas fa-undo"></i> Restore
+                    </button>
+                    <button class="delete-backup-btn" onclick="deleteBackupRecord(${backup.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// Restore from backup history (downloads the file first)
+function restoreFromHistory(backupId) {
+    const backup = backupHistory.find(b => b.id === backupId);
+    if (!backup) {
+        showNotification('Backup record not found', 'error');
+        return;
+    }
+    
+    showNotification('To restore from history, you need the actual backup file. Use "Restore Backup" button to select the file.', 'warning');
+}
+
+// Delete backup record from history
+function deleteBackupRecord(backupId) {
+    showConfirmationModal(
+        'Delete Backup Record',
+        'Are you sure you want to remove this backup from history?',
+        () => {
+            backupHistory = backupHistory.filter(b => b.id !== backupId);
+            localStorage.setItem('backupHistory', JSON.stringify(backupHistory));
+            loadBackupHistory();
+            showNotification('Backup record deleted', 'success');
+        }
+    );
+}
+
+// Toggle auto backup on/off
+function toggleAutoBackup() {
+    const checkbox = document.getElementById('auto-backup-enable');
+    backupSettings.enabled = checkbox.checked;
+    localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
+    console.log('Auto backup set to:', backupSettings.enabled);
+    
+    if (backupSettings.enabled) {
+        checkAndRunAutoBackup();
+        showNotification('Auto backup enabled', 'success');
+    } else {
+        showNotification('Auto backup disabled', 'info');
+    }
+}
+
+// Save backup frequency and retention settings
+function saveBackupSettings() {
+    const frequencySelect = document.getElementById('backup-frequency');
+    const retentionSelect = document.getElementById('backup-retention');
+    
+    if (frequencySelect) {
+        backupSettings.frequency = frequencySelect.value;
+        console.log('Backup frequency saved:', backupSettings.frequency);
+    }
+    if (retentionSelect) {
+        backupSettings.retention = parseInt(retentionSelect.value);
+        console.log('Backup retention saved:', backupSettings.retention);
+    }
+    
+    localStorage.setItem('backupSettings', JSON.stringify(backupSettings));
+    showNotification('Backup settings saved', 'success');
+    
+    // Check if auto backup is needed with new settings
+    if (backupSettings.enabled) {
+        checkAndRunAutoBackup();
+    }
+}
+
+// Export transactions to CSV file
+function exportTransactionsToCSV() {
+    console.log('Exporting to CSV...');
+    
+    const headers = ['ID', 'Date', 'Voucher', 'Type', 'Ledger', 'Subgroup', 'Debit', 'Credit', 'Amount', 'Bank', 'Narration'];
+    
+    // Convert each transaction to a CSV row
+    const rows = transactions.map(t => [
+        t.id,
+        t.date,
+        t.voucher || '',
+        t.type,
+        t.ledger,
+        t.subgroup || '',
+        (t.debit || 0).toFixed(2),
+        (t.credit || 0).toFixed(2),
+        (t.amount || t.debit || t.credit || 0).toFixed(2),
+        t.bank_name || '',
+        t.narration || ''
+    ]);
+    
+    // Build CSV content
+    let csv = headers.join(',') + '\n';
+    rows.forEach(row => {
+        csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+    });
+    
+    // Download the file
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification(`Exported ${transactions.length} transactions to CSV`, 'success');
+}
+
+// Export transactions to Excel (XLS) file
+function exportTransactionsToExcel() {
+    console.log('Exporting to Excel...');
+    
+    const headers = ['ID', 'Date', 'Voucher', 'Type', 'Ledger', 'Subgroup', 'Debit', 'Credit', 'Amount', 'Bank', 'Narration'];
+    
+    // Build HTML table for Excel
+    let html = `
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Accounting Transactions</title>
+            <style>
+                th { background: #3c40c6; color: white; padding: 10px; }
+                td { padding: 8px; border: 1px solid #ddd; }
+                .debit { color: #28a745; }
+                .credit { color: #dc3545; }
+            </style>
+        </head>
+        <body>
+            <h2>Accounting Transactions</h2>
+            <p>Generated: ${new Date().toLocaleString()}</p>
+            <p>Total Transactions: ${transactions.length}</p>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+                </thead>
+                <tbody>
+    `;
+    
+    // Add each transaction as a row
+    transactions.forEach(t => {
+        html += '<tr>';
+        html += `<td>${t.id}</td>`;
+        html += `<td>${t.date}</td>`;
+        html += `<td>${t.voucher || ''}</td>`;
+        html += `<td>${t.type}</td>`;
+        html += `<td>${t.ledger}</td>`;
+        html += `<td>${t.subgroup || ''}</td>`;
+        html += `<td class="debit">${(t.debit || 0).toFixed(2)}</td>`;
+        html += `<td class="credit">${(t.credit || 0).toFixed(2)}</td>`;
+        html += `<td>${(t.amount || t.debit || t.credit || 0).toFixed(2)}</td>`;
+        html += `<td>${t.bank_name || ''}</td>`;
+        html += `<td>${t.narration || ''}</td>`;
+        html += '</tr>';
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+    
+    // Download the Excel file
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions-${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification(`Exported ${transactions.length} transactions to Excel`, 'success');
+}
+
+// Show confirmation dialog before clearing all data
+function confirmClearAllData() {
+    showConfirmationModal(
+        '⚠️ DANGER: Clear All Data',
+        'This action will PERMANENTLY DELETE all your data:\n\n' +
+        `• ${transactions.length} transactions\n` +
+        `• ${ledgers.length} ledgers\n` +
+        `• ${banks.length} banks\n` +
+        `• ${customSubGroups.length} subgroups\n\n` +
+        'This cannot be undone!\n\n' +
+        'Type "DELETE" in the prompt to confirm.',
+        () => {
+            const confirmation = prompt('Type "DELETE" to confirm clearing ALL data:');
+            if (confirmation === 'DELETE') {
+                console.log('User confirmed, clearing all data...');
+                
+                // Clear localStorage
+                localStorage.clear();
+                
+                // Reset global variables
+                window.transactions = [];
+                window.ledgers = [];
+                window.banks = [];
+                window.customSubGroups = [];
+                window.backupSettings = null;
+                window.backupHistory = [];
+                
+                showNotification('All data has been cleared. Reloading page...', 'warning');
+                
+                // Reload after 1.5 seconds
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('Clear data cancelled', 'info');
+            }
+        }
+    );
+}
+
+// ==================== NOTIFICATION SYSTEM ====================
+
+// Show toast notification
+function showNotification(message, type = 'success') {
+    console.log('Notification:', type, '-', message);
+    
+    // Remove existing notifications to avoid duplicates
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    
+    // Choose icon based on type
+    let icon = 'fa-check-circle';
+    if (type === 'error') icon = 'fa-exclamation-circle';
+    if (type === 'warning') icon = 'fa-exclamation-triangle';
+    if (type === 'info') icon = 'fa-info-circle';
+    
+    notification.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ==================== CONFIRMATION MODAL ====================
+
+// Show confirmation dialog modal with optional cancel callback
+function showConfirmationModal(title, message, onConfirm, onCancel = null) {
+    console.log('Showing confirmation modal:', title);
+    
+    // Remove existing modal
+    const existingModal = document.querySelector('.confirmation-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'confirmation-modal show';
+    modal.innerHTML = `
+        <div class="confirmation-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <i class="fas fa-exclamation-triangle warning-icon" style="font-size: 4rem; color: #ffc107;"></i>
+            <h3 style="margin: 1rem 0;">${title}</h3>
+            <p style="white-space: pre-line; font-size: 1.3rem; line-height: 1.6; text-align: left; max-height: 400px; overflow-y: auto;">${message}</p>
+            <div class="confirmation-btns" style="margin-top: 2rem;">
+                <button class="confirm-yes" id="confirm-yes-btn" style="background: #dc3545;">Yes, Restore</button>
+                <button class="confirm-no" id="confirm-no-btn" style="background: #6c757d;">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Get buttons
+    const yesBtn = document.getElementById('confirm-yes-btn');
+    const noBtn = document.getElementById('confirm-no-btn');
+    
+    // Close modal function
+    const closeModal = () => {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 300);
+    };
+    
+    // Handle yes button
+    yesBtn.onclick = () => {
+        closeModal();
+        if (onConfirm) onConfirm();
+    };
+    
+    // Handle no button
+    noBtn.onclick = () => {
+        closeModal();
+        if (onCancel) onCancel();
+    };
+    
+    // Close when clicking outside
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            closeModal();
+            if (onCancel) onCancel();
+        }
+    };
+    
+    // Close on Escape key
+    const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            if (onCancel) onCancel();
+            document.removeEventListener('keydown', handleEsc);
+        }
+    };
+    document.addEventListener('keydown', handleEsc);
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+// Format file size for display
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Format date and time
+function formatDateTime(date) {
+    if (!date) return '-';
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+// ==================== DARK MODE SYSTEM ====================
+
+// Dark mode settings
+let darkModeSettings = JSON.parse(localStorage.getItem('darkModeSettings')) || {
+    enabled: false,
+    auto: false,  // Auto-detect system preference
+    schedule: false, // Schedule dark mode
+    scheduleStart: '18:00',
+    scheduleEnd: '06:00'
+};
+
+// Initialize dark mode
+function initDarkMode() {
+    console.log('Initializing dark mode...');
+    
+    // Check for saved preference
+    const savedDarkMode = localStorage.getItem('darkMode');
+    
+    if (savedDarkMode !== null) {
+        // Use saved preference
+        if (savedDarkMode === 'true') {
+            enableDarkMode();
+        } else {
+            disableDarkMode();
+        }
+    } else if (darkModeSettings.auto) {
+        // Auto-detect system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            enableDarkMode();
+        } else {
+            disableDarkMode();
+        }
+    } else if (darkModeSettings.schedule) {
+        // Check scheduled time
+        checkScheduledDarkMode();
+    } else {
+        // Default to light mode
+        disableDarkMode();
+    }
+    
+    // Listen for system preference changes
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (darkModeSettings.auto) {
+                if (e.matches) {
+                    enableDarkMode();
+                } else {
+                    disableDarkMode();
+                }
+            }
+        });
+    }
+    
+    // Check scheduled dark mode every minute
+    if (darkModeSettings.schedule) {
+        setInterval(checkScheduledDarkMode, 60000);
+    }
+}
+
+// Enable dark mode
+function enableDarkMode() {
+    document.documentElement.classList.add('dark-mode');
+    localStorage.setItem('darkMode', 'true');
+    
+    // Update toggle button icon
+    const toggleBtn = document.getElementById('darkModeToggle');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        toggleBtn.title = 'Switch to Light Mode';
+    }
+    
+    // Update any charts if they exist
+    updateChartsForDarkMode();
+    
+    console.log('Dark mode enabled');
+}
+
+// Disable dark mode
+function disableDarkMode() {
+    document.documentElement.classList.remove('dark-mode');
+    localStorage.setItem('darkMode', 'false');
+    
+    // Update toggle button icon
+    const toggleBtn = document.getElementById('darkModeToggle');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        toggleBtn.title = 'Switch to Dark Mode';
+    }
+    
+    // Update any charts if they exist
+    updateChartsForDarkMode();
+    
+    console.log('Light mode enabled');
+}
+
+// Toggle dark mode
+function toggleDarkMode() {
+    const isDarkMode = document.documentElement.classList.contains('dark-mode');
+    
+    if (isDarkMode) {
+        disableDarkMode();
+        showNotification('Light mode activated', 'info');
+    } else {
+        enableDarkMode();
+        showNotification('Dark mode activated', 'info');
+    }
+    
+    // Update settings
+    darkModeSettings.enabled = !isDarkMode;
+    localStorage.setItem('darkModeSettings', JSON.stringify(darkModeSettings));
+}
+
+// Check and apply scheduled dark mode
+function checkScheduledDarkMode() {
+    if (!darkModeSettings.schedule) return;
+    
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    const isWithinSchedule = isTimeBetween(currentTime, darkModeSettings.scheduleStart, darkModeSettings.scheduleEnd);
+    
+    if (isWithinSchedule && !document.documentElement.classList.contains('dark-mode')) {
+        enableDarkMode();
+    } else if (!isWithinSchedule && document.documentElement.classList.contains('dark-mode')) {
+        disableDarkMode();
+    }
+}
+
+// Helper: Check if current time is between start and end times
+function isTimeBetween(current, start, end) {
+    if (start <= end) {
+        return current >= start && current <= end;
+    } else {
+        // Overnight schedule (e.g., 18:00 to 06:00)
+        return current >= start || current <= end;
+    }
+}
+
+// Update charts for dark mode
+function updateChartsForDarkMode() {
+    // Update Chart.js charts if they exist
+    if (typeof Chart !== 'undefined') {
+        // Get all chart canvases
+        const charts = document.querySelectorAll('canvas');
+        charts.forEach(canvas => {
+            const chart = Chart.getChart(canvas);
+            if (chart) {
+                // Update grid colors
+                const isDark = document.documentElement.classList.contains('dark-mode');
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                const textColor = isDark ? '#e0e0e0' : '#666';
+                
+                chart.options.scales = chart.options.scales || {};
+                
+                if (chart.options.scales.x) {
+                    chart.options.scales.x.grid = chart.options.scales.x.grid || {};
+                    chart.options.scales.x.grid.color = gridColor;
+                    chart.options.scales.x.ticks = chart.options.scales.x.ticks || {};
+                    chart.options.scales.x.ticks.color = textColor;
+                }
+                
+                if (chart.options.scales.y) {
+                    chart.options.scales.y.grid = chart.options.scales.y.grid || {};
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
+                    chart.options.scales.y.ticks.color = textColor;
+                }
+                
+                chart.update();
+            }
+        });
+    }
+}
+
+// Show dark mode settings modal
+function showDarkModeSettings() {
+    const modalHTML = `
+        <div id="darkmode-settings-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px;">
+                <span class="close-modal" onclick="closeDarkModeSettings()">&times;</span>
+                <h3><i class="fas fa-moon"></i> Dark Mode Settings</h3>
+                
+                <div class="darkmode-settings">
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="darkmode-auto" ${darkModeSettings.auto ? 'checked' : ''}>
+                            Auto-detect system preference
+                        </label>
+                        <p class="setting-hint">Automatically match your system's dark/light mode</p>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="darkmode-schedule" ${darkModeSettings.schedule ? 'checked' : ''}>
+                            Schedule dark mode
+                        </label>
+                        <div class="schedule-times" style="margin-top: 1rem; ${!darkModeSettings.schedule ? 'display: none;' : ''}">
+                            <div class="time-input">
+                                <label>Start time:</label>
+                                <input type="time" id="darkmode-start" value="${darkModeSettings.scheduleStart}">
+                            </div>
+                            <div class="time-input">
+                                <label>End time:</label>
+                                <input type="time" id="darkmode-end" value="${darkModeSettings.scheduleEnd}">
+                            </div>
+                            <p class="setting-hint">Dark mode will activate between these hours</p>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <button class="btn" onclick="applyDarkModeSettings()" style="width: 100%;">
+                            <i class="fas fa-save"></i> Apply Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('darkmode-settings-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Show modal
+    const modal = document.getElementById('darkmode-settings-modal');
+    modal.style.display = 'block';
+    
+    // Add event listeners
+    const scheduleCheckbox = document.getElementById('darkmode-schedule');
+    const scheduleDiv = document.querySelector('.schedule-times');
+    
+    if (scheduleCheckbox && scheduleDiv) {
+        scheduleCheckbox.addEventListener('change', function() {
+            scheduleDiv.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+}
+
+// Close dark mode settings modal
+function closeDarkModeSettings() {
+    const modal = document.getElementById('darkmode-settings-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Apply dark mode settings
+function applyDarkModeSettings() {
+    const auto = document.getElementById('darkmode-auto')?.checked || false;
+    const schedule = document.getElementById('darkmode-schedule')?.checked || false;
+    const startTime = document.getElementById('darkmode-start')?.value || '18:00';
+    const endTime = document.getElementById('darkmode-end')?.value || '06:00';
+    
+    darkModeSettings = {
+        enabled: document.documentElement.classList.contains('dark-mode'),
+        auto: auto,
+        schedule: schedule,
+        scheduleStart: startTime,
+        scheduleEnd: endTime
+    };
+    
+    localStorage.setItem('darkModeSettings', JSON.stringify(darkModeSettings));
+    
+    // Re-initialize based on new settings
+    if (auto) {
+        // Check system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            enableDarkMode();
+        } else {
+            disableDarkMode();
+        }
+    } else if (schedule) {
+        checkScheduledDarkMode();
+    }
+    
+    closeDarkModeSettings();
+    showNotification('Dark mode settings saved', 'success');
+}
+
+// Add keyboard shortcut for dark mode (Ctrl + D)
+function setupDarkModeKeyboardShortcut() {
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'd') {
+            e.preventDefault();
+            toggleDarkMode();
+            showNotification('Dark mode toggled via keyboard', 'info');
+        }
+    });
+}
+
+// ==================== KEYBOARD SHORTCUTS HELP ====================
+
+// Open shortcuts help modal
+function showShortcutsModal() {
+    console.log('Opening keyboard shortcuts help');
+    
+    const modal = document.getElementById('shortcuts-modal');
+    if (modal) {
+        modal.style.display = 'block';
+        
+        // Focus on the modal for accessibility
+        setTimeout(() => {
+            const closeBtn = modal.querySelector('.close-modal');
+            if (closeBtn) closeBtn.focus();
+        }, 100);
+    } else {
+        console.error('Shortcuts modal not found');
+        showNotification('Shortcuts modal not found', 'error');
+    }
+}
+
+// Close shortcuts help modal
+function closeShortcutsModal() {
+    const modal = document.getElementById('shortcuts-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Return focus to the element that opened the modal
+        const helpBtn = document.getElementById('floating-help-btn');
+        if (helpBtn) helpBtn.focus();
+    }
+}
+
+// Setup global keyboard shortcuts
+function setupGlobalKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger shortcuts when typing in input fields (except special cases)
+        const isTyping = e.target.tagName === 'INPUT' || 
+                         e.target.tagName === 'TEXTAREA' || 
+                         e.target.tagName === 'SELECT';
+        
+        // Ctrl + H - Open help (works anywhere)
+        if (e.ctrlKey && e.key === 'h') {
+            e.preventDefault();
+            showShortcutsModal();
+            announceToScreenReader('Keyboard shortcuts help opened');
+            return;
+        }
+        
+        // Ctrl + B - Backup (works anywhere)
+        if (e.ctrlKey && e.key === 'b') {
+            e.preventDefault();
+            if (typeof backupData === 'function') {
+                backupData();
+                announceToScreenReader('Creating backup');
+            }
+            return;
+        }
+        
+        // F1 - Alternative help key (works anywhere)
+        if (e.key === 'F1') {
+            e.preventDefault();
+            showShortcutsModal();
+            announceToScreenReader('Help menu opened');
+            return;
+        }
+        
+        // Escape - Close modals (works anywhere)
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal');
+            let anyModalOpen = false;
+            
+            modals.forEach(modal => {
+                if (modal.style.display === 'block') {
+                    anyModalOpen = true;
+                    // Try to close the modal based on its ID
+                    if (modal.id === 'shortcuts-modal') closeShortcutsModal();
+                    else if (modal.id === 'new-ledger-modal') closeModal();
+                    else if (modal.id === 'new-bank-modal') closeBankModal();
+                    else if (modal.id === 'manage-ledgers-modal') closeManageLedgersModal();
+                    else if (modal.id === 'delete-ledger-modal') closeDeleteLedgerModal();
+                    else if (modal.id === 'new-subgroup-modal') closeSubGroupModal();
+                    else if (modal.id === 'darkmode-settings-modal') closeDarkModeSettings();
+                    else {
+                        modal.style.display = 'none';
+                    }
+                }
+            });
+            
+            if (anyModalOpen) {
+                e.preventDefault();
+                announceToScreenReader('Modal closed');
+            }
+            return;
+        }
+        
+        // Don't process other shortcuts if typing in fields
+        if (isTyping) return;
+        
+        // Alt + P - Payment tab
+        if (e.altKey && e.key === 'p') {
+            e.preventDefault();
+            const paymentTab = document.querySelector('[data-tab="payment"]');
+            if (paymentTab && typeof switchTab === 'function') {
+                switchTab('payment');
+                announceToScreenReader('Switched to payment tab');
+            }
+            return;
+        }
+        
+        // Alt + R - Receipt tab
+        if (e.altKey && e.key === 'r') {
+            e.preventDefault();
+            const receiptTab = document.querySelector('[data-tab="receipt"]');
+            if (receiptTab && typeof switchTab === 'function') {
+                switchTab('receipt');
+                announceToScreenReader('Switched to receipt tab');
+            }
+            return;
+        }
+        
+        // Alt + J - Journal tab
+        if (e.altKey && e.key === 'j') {
+            e.preventDefault();
+            const journalTab = document.querySelector('[data-tab="journal"]');
+            if (journalTab && typeof switchTab === 'function') {
+                switchTab('journal');
+                announceToScreenReader('Switched to journal tab');
+            }
+            return;
+        }
+        
+        // Ctrl + S - Save (works from any tab)
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+            
+            if (activeTab === 'journal') {
+                if (typeof saveJournal === 'function') {
+                    saveJournal();
+                }
+            } else if (activeTab === 'payment' || activeTab === 'receipt') {
+                if (typeof saveEntry === 'function') {
+                    saveEntry(activeTab);
+                }
+            }
+            return;
+        }
+        
+        // Ctrl + N - New ledger
+        if (e.ctrlKey && e.key === 'n') {
+            e.preventDefault();
+            const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+            if (activeTab && typeof showNewLedgerModal === 'function') {
+                showNewLedgerModal(activeTab);
+                announceToScreenReader('New ledger modal opened');
+            }
+            return;
+        }
+        
+        // F5 - Refresh
+        if (e.key === 'F5') {
+            e.preventDefault();
+            if (typeof displayRecentTransactions === 'function') {
+                displayRecentTransactions();
+                showNotification('Transactions refreshed', 'success');
+                announceToScreenReader('Transactions refreshed');
+            }
+            return;
+        }
+        
+        // Ctrl + Delete - Delete all transactions
+        if (e.ctrlKey && e.key === 'Delete') {
+            e.preventDefault();
+            if (typeof deleteAllTransactions === 'function') {
+                deleteAllTransactions();
+            }
+            return;
+        }
+        
+        // Ctrl + + (plus) - Add journal row (only in journal tab)
+        if (e.ctrlKey && e.key === '+' && document.querySelector('#journal.active')) {
+            e.preventDefault();
+            if (typeof addJournalRow === 'function') {
+                addJournalRow();
+                announceToScreenReader('Added new journal row');
+            }
+            return;
+        }
+        
+        // Ctrl + D - Toggle dark mode
+        if (e.ctrlKey && e.key === 'd') {
+            e.preventDefault();
+            if (typeof toggleDarkMode === 'function') {
+                toggleDarkMode();
+                const isDark = document.documentElement.classList.contains('dark-mode');
+                announceToScreenReader(isDark ? 'Dark mode enabled' : 'Light mode enabled');
+            }
+            return;
+        }
+    });
+}
+
+// Add floating help button (optional - add to your page)
+function addFloatingHelpButton() {
+    // Check if button already exists
+    if (document.getElementById('floating-help-btn')) return;
+    
+    const helpBtn = document.createElement('div');
+    helpBtn.id = 'floating-help-btn';
+    helpBtn.className = 'floating-help-btn';
+    helpBtn.innerHTML = '<i class="fas fa-question"></i>';
+    helpBtn.title = 'Keyboard Shortcuts (Ctrl+H)';
+    helpBtn.setAttribute('aria-label', 'Open keyboard shortcuts help');
+    helpBtn.onclick = () => showShortcutsModal();
+    
+    document.body.appendChild(helpBtn);
+}
+
+// ==================== KEYBOARD SHORTCUTS HELP ====================
+
+/**
+ * Opens the keyboard shortcuts help modal
+ * This function displays all available keyboard shortcuts in a modal dialog
+ */
+function showShortcutsModal() {
+    console.log('Opening keyboard shortcuts help');
+    
+    // Get the modal element by its ID
+    const modal = document.getElementById('shortcuts-modal');
+    
+    // Check if modal exists
+    if (modal) {
+        // Display the modal
+        modal.style.display = 'block';
+        
+        // For accessibility: focus on the close button after modal opens
+        setTimeout(() => {
+            const closeBtn = modal.querySelector('.close-modal');
+            if (closeBtn) {
+                closeBtn.focus();
+            }
+        }, 100);
+    } else {
+        // If modal doesn't exist, show error
+        console.error('Shortcuts modal not found');
+        if (typeof showNotification === 'function') {
+            showNotification('Shortcuts modal not found', 'error');
+        }
+    }
+}
+
+/**
+ * Closes the keyboard shortcuts help modal
+ */
+function closeShortcutsModal() {
+    // Get the modal element
+    const modal = document.getElementById('shortcuts-modal');
+    
+    // Hide the modal if it exists
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Return focus to the help button if it exists
+        const helpBtn = document.getElementById('floating-help-btn');
+        if (helpBtn) {
+            helpBtn.focus();
+        }
+    }
+}
+
+/**
+ * Sets up all global keyboard shortcuts for the application
+ * This function listens for key presses and triggers appropriate actions
+ */
+function setupGlobalKeyboardShortcuts() {
+    // Add event listener to the whole document
+    document.addEventListener('keydown', function(e) {
+        // Check if user is typing in an input field
+        const isTyping = e.target.tagName === 'INPUT' || 
+                         e.target.tagName === 'TEXTAREA' || 
+                         e.target.tagName === 'SELECT';
+        
+        // ========== SHORTCUT: Ctrl + H ==========
+        // Opens help menu (works anywhere, even when typing)
+        if (e.ctrlKey && e.key === 'h') {
+            e.preventDefault(); // Prevent browser's default help behavior
+            showShortcutsModal();
+            // Announce for screen readers if function exists
+            if (typeof announceToScreenReader === 'function') {
+                announceToScreenReader('Keyboard shortcuts help opened');
+            }
+            return; // Stop processing other shortcuts
+        }
+        
+        // ========== SHORTCUT: Ctrl + B ==========
+        // Creates a backup (works anywhere)
+        if (e.ctrlKey && e.key === 'b') {
+            e.preventDefault();
+            // Check if backup function exists
+            if (typeof backupData === 'function') {
+                backupData();
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('Creating backup');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: F1 ==========
+        // Alternative help key (works anywhere)
+        if (e.key === 'F1') {
+            e.preventDefault();
+            showShortcutsModal();
+            if (typeof announceToScreenReader === 'function') {
+                announceToScreenReader('Help menu opened');
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Escape ==========
+        // Closes any open modal (works anywhere)
+        if (e.key === 'Escape') {
+            // Find all modals on the page
+            const modals = document.querySelectorAll('.modal');
+            let anyModalOpen = false;
+            
+            // Check each modal to see if it's open
+            modals.forEach(modal => {
+                if (modal.style.display === 'block') {
+                    anyModalOpen = true;
+                    
+                    // Close the modal based on its ID
+                    if (modal.id === 'shortcuts-modal') {
+                        closeShortcutsModal();
+                    } 
+                    else if (modal.id === 'new-ledger-modal') {
+                        if (typeof closeModal === 'function') closeModal();
+                    }
+                    else if (modal.id === 'new-bank-modal') {
+                        if (typeof closeBankModal === 'function') closeBankModal();
+                    }
+                    else if (modal.id === 'manage-ledgers-modal') {
+                        if (typeof closeManageLedgersModal === 'function') closeManageLedgersModal();
+                    }
+                    else if (modal.id === 'delete-ledger-modal') {
+                        if (typeof closeDeleteLedgerModal === 'function') closeDeleteLedgerModal();
+                    }
+                    else if (modal.id === 'new-subgroup-modal') {
+                        if (typeof closeSubGroupModal === 'function') closeSubGroupModal();
+                    }
+                    else if (modal.id === 'darkmode-settings-modal') {
+                        if (typeof closeDarkModeSettings === 'function') closeDarkModeSettings();
+                    }
+                    else {
+                        // For any other modals, just hide them
+                        modal.style.display = 'none';
+                    }
+                }
+            });
+            
+            // If a modal was closed, prevent default escape behavior
+            if (anyModalOpen) {
+                e.preventDefault();
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('Modal closed');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: DON'T PROCESS OTHER SHORTCUTS WHILE TYPING ==========
+        // If user is typing in an input field, don't process navigation shortcuts
+        if (isTyping) return;
+        
+        // ========== SHORTCUT: Alt + P ==========
+        // Switch to Payment tab
+        if (e.altKey && e.key === 'p') {
+            e.preventDefault();
+            // Find the payment tab button
+            const paymentTab = document.querySelector('[data-tab="payment"]');
+            // Check if switchTab function exists
+            if (paymentTab && typeof switchTab === 'function') {
+                switchTab('payment');
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('Switched to payment tab');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Alt + R ==========
+        // Switch to Receipt tab
+        if (e.altKey && e.key === 'r') {
+            e.preventDefault();
+            const receiptTab = document.querySelector('[data-tab="receipt"]');
+            if (receiptTab && typeof switchTab === 'function') {
+                switchTab('receipt');
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('Switched to receipt tab');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Alt + J ==========
+        // Switch to Journal tab
+        if (e.altKey && e.key === 'j') {
+            e.preventDefault();
+            const journalTab = document.querySelector('[data-tab="journal"]');
+            if (journalTab && typeof switchTab === 'function') {
+                switchTab('journal');
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('Switched to journal tab');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Ctrl + S ==========
+        // Save current entry (works from any tab)
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            
+            // Get the currently active tab
+            const activeTab = document.querySelector('.tab-btn.active');
+            const tabId = activeTab ? activeTab.dataset.tab : null;
+            
+            // Call the appropriate save function
+            if (tabId === 'journal') {
+                if (typeof saveJournal === 'function') {
+                    saveJournal();
+                }
+            } 
+            else if (tabId === 'payment' || tabId === 'receipt') {
+                if (typeof saveEntry === 'function') {
+                    saveEntry(tabId);
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Ctrl + N ==========
+        // Create new ledger
+        if (e.ctrlKey && e.key === 'n') {
+            e.preventDefault();
+            
+            // Get the active tab to know which form we're in
+            const activeTab = document.querySelector('.tab-btn.active');
+            const tabId = activeTab ? activeTab.dataset.tab : null;
+            
+            // Open new ledger modal for the current tab
+            if (tabId && typeof showNewLedgerModal === 'function') {
+                showNewLedgerModal(tabId);
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('New ledger modal opened');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: F5 ==========
+        // Refresh transactions
+        if (e.key === 'F5') {
+            e.preventDefault();
+            if (typeof displayRecentTransactions === 'function') {
+                displayRecentTransactions();
+                if (typeof showNotification === 'function') {
+                    showNotification('Transactions refreshed', 'success');
+                }
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader('Transactions refreshed');
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Ctrl + Delete ==========
+        // Delete all transactions
+        if (e.ctrlKey && e.key === 'Delete') {
+            e.preventDefault();
+            if (typeof deleteAllTransactions === 'function') {
+                deleteAllTransactions();
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Ctrl + + (plus) ==========
+        // Add new journal row (only works in journal tab)
+        if (e.ctrlKey && e.key === '+') {
+            // Check if journal tab is active
+            const journalTab = document.querySelector('#journal.active');
+            if (journalTab) {
+                e.preventDefault();
+                if (typeof addJournalRow === 'function') {
+                    addJournalRow();
+                    if (typeof announceToScreenReader === 'function') {
+                        announceToScreenReader('Added new journal row');
+                    }
+                }
+            }
+            return;
+        }
+        
+        // ========== SHORTCUT: Ctrl + D ==========
+        // Toggle dark mode
+        if (e.ctrlKey && e.key === 'd') {
+            e.preventDefault();
+            if (typeof toggleDarkMode === 'function') {
+                toggleDarkMode();
+                const isDark = document.documentElement.classList.contains('dark-mode');
+                if (typeof announceToScreenReader === 'function') {
+                    announceToScreenReader(isDark ? 'Dark mode enabled' : 'Light mode enabled');
+                }
+            }
+            return;
+        }
+    });
+}
+
+/**
+ * Adds a floating help button to the page
+ * This button appears in the bottom-right corner and opens the shortcuts modal
+ */
+function addFloatingHelpButton() {
+    // Check if button already exists to avoid duplicates
+    if (document.getElementById('floating-help-btn')) {
+        console.log('Floating help button already exists');
+        return;
+    }
+    
+    // Create the button element
+    const helpBtn = document.createElement('div');
+    helpBtn.id = 'floating-help-btn';
+    helpBtn.className = 'floating-help-btn';
+    helpBtn.innerHTML = '<i class="fas fa-question"></i>';
+    helpBtn.title = 'Keyboard Shortcuts (Ctrl+H)';
+    helpBtn.setAttribute('aria-label', 'Open keyboard shortcuts help');
+    
+    // Add click event to open shortcuts modal
+    helpBtn.onclick = function() {
+        if (typeof showShortcutsModal === 'function') {
+            showShortcutsModal();
+        }
+    };
+    
+    // Add keyboard focus handling
+    helpBtn.onkeydown = function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (typeof showShortcutsModal === 'function') {
+                showShortcutsModal();
+            }
+        }
+    };
+    
+    // Make it focusable for accessibility
+    helpBtn.setAttribute('tabindex', '0');
+    
+    // Add to the page
+    document.body.appendChild(helpBtn);
+    
+    console.log('Floating help button added');
+}
+
+// ==================== END OF KEYBOARD SHORTCUTS HELP ====================
 // ==================== EXPORT FUNCTIONS ====================
 window.switchTab = switchTab;
 window.saveEntry = saveEntry;
@@ -4176,6 +6480,31 @@ window.updateSubGroupDatalist = updateSubGroupDatalist;
 window.showNewSubGroupModal = showNewSubGroupModal;
 window.closeSubGroupModal = closeSubGroupModal;
 window.createNewSubGroup = createNewSubGroup;
+window.backupData = backupData;
+window.triggerRestore = triggerRestore;
+window.restoreData = restoreData;
+window.confirmClearAllData = confirmClearAllData;
+window.exportTransactionsToCSV = exportTransactionsToCSV;
+window.exportTransactionsToExcel = exportTransactionsToExcel;
+window.toggleAutoBackup = toggleAutoBackup;
+window.saveBackupSettings = saveBackupSettings;
+window.restoreFromHistory = restoreFromHistory;
+window.deleteBackupRecord = deleteBackupRecord;
+window.showNotification = showNotification;
+window.initBackupSystem = initBackupSystem;
+// Dark mode exports
+window.initDarkMode = initDarkMode;
+window.toggleDarkMode = toggleDarkMode;
+window.enableDarkMode = enableDarkMode;
+window.disableDarkMode = disableDarkMode;
+window.showDarkModeSettings = showDarkModeSettings;
+window.closeDarkModeSettings = closeDarkModeSettings;
+window.applyDarkModeSettings = applyDarkModeSettings;
+window.setupDarkModeKeyboardShortcut = setupDarkModeKeyboardShortcut;
+window.showShortcutsModal = showShortcutsModal;
+window.closeShortcutsModal = closeShortcutsModal;
+window.setupGlobalKeyboardShortcuts = setupGlobalKeyboardShortcuts;
+window.addFloatingHelpButton = addFloatingHelpButton;
 
 // ==================== MIGRATION: Update Existing Ledgers ====================
 // Run this once to update all existing cash/bank ledgers with Current Asset subgroup
