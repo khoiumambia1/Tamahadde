@@ -1,7 +1,7 @@
 // Accounting System JavaScript
 
 // ==================== DATA STORAGE ====================
-let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+let transactions = safeJSONParse('transactions', []);
 let ledgers = JSON.parse(localStorage.getItem('ledgers')) || [
     // Cash and Bank Accounts (Asset)
     { id: 1, name: 'cash', type: 'asset', category: 'cash', group: 'current_asset' },
@@ -166,6 +166,46 @@ const ledgerSubGroups = {
         { value: 'reserves', label: 'Reserves & Surplus' }
     ]
 };
+// ==================== BANK MANAGEMENT ====================
+let banks = JSON.parse(localStorage.getItem('banks')) || [
+    { id: 1, name: 'bank - sbl', displayName: 'Sonali Bank Limited (SBL)', accountNo: '' },
+    { id: 2, name: 'bank - jbl', displayName: 'Janata Bank Limited (JBL)', accountNo: '' },
+    { id: 3, name: 'bank - agrani', displayName: 'Agrani Bank Limited', accountNo: '' },
+    { id: 4, name: 'bank - rupali', displayName: 'Rupali Bank Limited', accountNo: '' },
+    { id: 5, name: 'bank - bdbl', displayName: 'Bangladesh Development Bank Limited (BDBL)', accountNo: '' },
+    { id: 6, name: 'bank - bkash', displayName: 'bKash (Mobile Banking)', accountNo: '' },
+    { id: 7, name: 'bank - nagad', displayName: 'Nagad (Mobile Banking)', accountNo: '' },
+    { id: 8, name: 'bank - rocket', displayName: 'Rocket (Dutch-Bangla Bank)', accountNo: '' },
+    { id: 9, name: 'bank - dbbl', displayName: 'Dutch-Bangla Bank Limited (DBBL)', accountNo: '' },
+    { id: 10, name: 'bank - ebbl', displayName: 'Eastern Bank Limited (EBL)', accountNo: '' },
+    { id: 11, name: 'bank - ibbl', displayName: 'Islami Bank Bangladesh Limited (IBBL)', accountNo: '' },
+    { id: 12, name: 'bank - pubali', displayName: 'Pubali Bank Limited', accountNo: '' },
+    { id: 13, name: 'bank - ucb', displayName: 'United Commercial Bank (UCB)', accountNo: '' },
+    { id: 14, name: 'bank - city', displayName: 'City Bank Limited', accountNo: '' },
+    { id: 15, name: 'bank - ncc', displayName: 'NCC Bank Limited', accountNo: '' },
+    { id: 16, name: 'bank - prime', displayName: 'Prime Bank Limited', accountNo: '' },
+    { id: 17, name: 'bank - southbangla', displayName: 'South Bangla Agriculture & Commerce Bank', accountNo: '' },
+    { id: 18, name: 'bank - mercantile', displayName: 'Mercantile Bank Limited', accountNo: '' },
+    { id: 19, name: 'bank - mutual', displayName: 'Mutual Trust Bank Limited (MTB)', accountNo: '' },
+    { id: 20, name: 'bank - standard', displayName: 'Standard Bank Limited', accountNo: '' },
+    { id: 21, name: 'bank - one', displayName: 'One Bank Limited', accountNo: '' },
+    { id: 22, name: 'bank - exim', displayName: 'EXIM Bank Limited', accountNo: '' },
+    { id: 23, name: 'bank - fsibl', displayName: 'First Security Islami Bank Limited', accountNo: '' },
+    { id: 24, name: 'bank - sjibl', displayName: 'Shahjalal Islami Bank Limited', accountNo: '' },
+    { id: 25, name: 'bank - al-arafah', displayName: 'Al-Arafah Islami Bank Limited', accountNo: '' },
+    { id: 26, name: 'bank - sibl', displayName: 'Social Islami Bank Limited (SIBL)', accountNo: '' },
+    { id: 27, name: 'bank - midland', displayName: 'Midland Bank Limited', accountNo: '' },
+    { id: 28, name: 'bank - modhumoti', displayName: 'Modhumoti Bank Limited', accountNo: '' },
+    { id: 29, name: 'bank - nrbc', displayName: 'NRB Bank Limited', accountNo: '' },
+    { id: 30, name: 'bank - trust', displayName: 'Trust Bank Limited', accountNo: '' },
+    { id: 31, name: 'bank - ab', displayName: 'AB Bank Limited', accountNo: '' },
+    { id: 32, name: 'bank - krishi', displayName: 'Bangladesh Krishi Bank (BKB)', accountNo: '' },
+    { id: 33, name: 'bank - rajuk', displayName: 'Rajshahi Krishi Unnayan Bank (RAKUB)', accountNo: '' },
+    { id: 34, name: 'bank - probashi', displayName: 'Probashi Kallyan Bank', accountNo: '' },
+    { id: 35, name: 'bank - ansar', displayName: 'Ansar VDP Unnayan Bank', accountNo: '' },
+    { id: 36, name: 'bank - grameen', displayName: 'Grameen Bank', accountNo: '' }
+];
+
 
 // ==================== MULTI-CURRENCY SYSTEM ====================
 
@@ -277,8 +317,19 @@ let currencies = JSON.parse(localStorage.getItem('currencies')) || {
 // Exchange rate history for tracking rate changes
 let exchangeRateHistory = JSON.parse(localStorage.getItem('exchangeRateHistory')) || [];
 
-// Currency exchange rate update timestamp
-let lastRateUpdate = JSON.parse(localStorage.getItem('lastRateUpdate')) || null;
+function safeJSONParse(key, defaultValue) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : defaultValue;
+    } catch (e) {
+        console.error(`Error parsing ${key}:`, e);
+        return defaultValue;
+    }
+}
+
+let escHandler = null;
+let existingOnclick = window.onclick;
+let lastRateUpdate = null;
 
 // ==================== CURRENCY FUNCTIONS ====================
 
@@ -289,6 +340,11 @@ let lastRateUpdate = JSON.parse(localStorage.getItem('lastRateUpdate')) || null;
  * @returns {string} Formatted currency string
  */
 function formatCurrency(amount, currencyCode = null) {
+
+    if (!currencySettings.autoConvert) {
+        return amount.toFixed(currencySettings.decimalPlaces);
+    }
+
     if (amount === undefined || amount === null || isNaN(amount)) {
         return '0.00';
     }
@@ -319,17 +375,16 @@ function formatCurrency(amount, currencyCode = null) {
  */
 function convertCurrency(amount, fromCurrency, toCurrency) {
     if (fromCurrency === toCurrency) return amount;
-    
+
     const fromRate = currencies[fromCurrency]?.rate || 1;
     const toRate = currencies[toCurrency]?.rate || 1;
-    
-    // First convert to base currency, then to target
+
+    // Convert FROM currency → base → TO currency
     const inBase = amount / fromRate;
     const converted = inBase * toRate;
-    
-    return parseFloat(converted.toFixed(currencySettings.decimalPlaces));
-}
 
+    return Number(converted.toFixed(currencySettings.decimalPlaces));
+}
 /**
  * Update exchange rates for a currency
  * @param {string} currencyCode - Currency to update
@@ -531,14 +586,13 @@ function showCurrencyModal() {
         }
     });
     
-    // Add escape key handler
-    const escHandler = function(e) {
-        if (e.key === 'Escape') {
-            closeCurrencyModal();
-            document.removeEventListener('keydown', escHandler);
-        }
-    };
-    document.addEventListener('keydown', escHandler);
+    escHandler = function(e) {
+    if (e.key === 'Escape') {
+        closeCurrencyModal();
+    }
+};
+
+document.addEventListener('keydown', escHandler);
 }
 
 /**
@@ -546,6 +600,14 @@ function showCurrencyModal() {
  */
 function closeCurrencyModal() {
     const modal = document.getElementById('currency-modal');
+
+    // 🔴 REMOVE event listener FIRST
+    if (escHandler) {
+        document.removeEventListener('keydown', escHandler);
+        escHandler = null;
+    }
+
+    // Then handle modal UI
     if (modal) {
         modal.style.display = 'none';
         setTimeout(() => modal.remove(), 300);
@@ -556,7 +618,9 @@ function closeCurrencyModal() {
  * Update base currency
  */
 function updateBaseCurrency() {
-    const newBase = document.getElementById('base-currency').value;
+    const el = document.getElementById('base-currency');
+    if (!el) return;
+    const newBase = el.value;
     const oldBase = currencySettings.baseCurrency;
     
     if (newBase === oldBase) return;
@@ -628,7 +692,7 @@ async function fetchLiveExchangeRates() {
     
     try {
         // Using free API - you can replace with your preferred API
-        const response = await fetch('https://api.exchangerate-api.com/v4/latest/BDT');
+        const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${currencySettings.baseCurrency}`);
         const data = await response.json();
         
         if (data && data.rates) {
@@ -655,51 +719,93 @@ async function fetchLiveExchangeRates() {
  * Add currency selector to forms
  */
 function addCurrencySelector() {
-    // Add currency selector to payment and receipt forms
-    ['payment', 'receipt'].forEach(type => {
-        const amountGroup = document.querySelector(`#${type} .amount-group`);
-        if (amountGroup && !document.getElementById(`${type}-currency`)) {
-            const currencySelector = document.createElement('div');
-            currencySelector.className = 'currency-selector';
-            currencySelector.style.marginBottom = '1rem';
-            currencySelector.innerHTML = `
-                <label for="${type}-currency"><i class="fas fa-globe"></i> Currency:</label>
-                <select id="${type}-currency" class="currency-select" onchange="handleCurrencyChange('${type}')">
-                    ${Object.keys(currencies).map(code => `
-                        <option value="${code}" ${currencySettings.displayCurrency === code ? 'selected' : ''}>
-                            ${currencies[code].flag} ${code} - ${currencies[code].name}
-                        </option>
-                    `).join('')}
-                </select>
-            `;
-            amountGroup.parentNode.insertBefore(currencySelector, amountGroup);
-        }
-    });
+    console.log('Adding currency selectors to forms...');
+    
+    // Check if currencies object exists and has data
+    if (!currencies || Object.keys(currencies).length === 0) {
+        console.error('Currencies not loaded, retrying...');
+        setTimeout(addCurrencySelector, 500);
+        return;
+    }
+    
+    // Build currency options HTML
+    const currencyOptions = Object.keys(currencies).map(code => `
+        <option value="${code}" ${currencySettings.displayCurrency === code ? 'selected' : ''}>
+            ${currencies[code].flag} ${code} - ${currencies[code].name}
+        </option>
+    `).join('');
+    
+    // Add currency selector to payment form
+    const paymentEntrySection = document.getElementById('payment-entry-section');
+    if (paymentEntrySection && !document.getElementById('payment-currency-selector')) {
+        const currencySelector = document.createElement('div');
+        currencySelector.id = 'payment-currency-selector';
+        currencySelector.className = 'currency-selector';
+        currencySelector.style.cssText = 'margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;';
+        currencySelector.innerHTML = `
+            <label for="payment-currency" style="font-size: 1.4rem; color: var(--black); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-globe"></i> Currency:
+            </label>
+            <select id="payment-currency" class="currency-select" style="padding: 0.8rem; font-size: 1.4rem; border: var(--border); border-radius: 0.5rem; background: var(--bg-color); min-width: 180px;">
+                ${currencyOptions}
+            </select>
+        `;
+        
+        // Insert at the beginning of entry section
+        paymentEntrySection.insertBefore(currencySelector, paymentEntrySection.firstChild);
+    }
+    
+    // Add currency selector to receipt form
+    const receiptEntrySection = document.getElementById('receipt-entry-section');
+    if (receiptEntrySection && !document.getElementById('receipt-currency-selector')) {
+        const currencySelector = document.createElement('div');
+        currencySelector.id = 'receipt-currency-selector';
+        currencySelector.className = 'currency-selector';
+        currencySelector.style.cssText = 'margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;';
+        currencySelector.innerHTML = `
+            <label for="receipt-currency" style="font-size: 1.4rem; color: var(--black); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-globe"></i> Currency:
+            </label>
+            <select id="receipt-currency" class="currency-select" style="padding: 0.8rem; font-size: 1.4rem; border: var(--border); border-radius: 0.5rem; background: var(--bg-color); min-width: 180px;">
+                ${currencyOptions}
+            </select>
+        `;
+        
+        receiptEntrySection.insertBefore(currencySelector, receiptEntrySection.firstChild);
+    }
+    
+    console.log('Currency selectors added with', Object.keys(currencies).length, 'currencies');
 }
-
 /**
  * Handle currency change in forms
  */
 function handleCurrencyChange(type) {
     const currencySelect = document.getElementById(`${type}-currency`);
     const amountInput = document.getElementById(`${type}-amount`);
+    const conversionInfo = document.getElementById(`${type}-conversion-info`);
     
-    if (currencySelect && amountInput && amountInput.value) {
-        const amount = parseFloat(amountInput.value);
-        const currency = currencySelect.value;
-        
-        // Convert to display currency
-        const converted = convertCurrency(amount, currency, currencySettings.displayCurrency);
-        
-        // Show conversion info
-        const conversionInfo = document.getElementById(`${type}-conversion-info`);
-        if (conversionInfo) {
-            conversionInfo.innerHTML = `
-                <small style="color: var(--light-color);">
-                    ≈ ${formatCurrency(converted)}
-                </small>
-            `;
-        }
+    if (!currencySelect || !amountInput) return;
+    
+    const amount = parseFloat(amountInput.value);
+    const currency = currencySelect.value;
+    
+    if (isNaN(amount) || amount <= 0) {
+        if (conversionInfo) conversionInfo.innerHTML = '';
+        return;
+    }
+    
+    // Convert to display currency
+    const converted = convertCurrency(amount, currency, currencySettings.displayCurrency);
+    
+    // Show conversion info
+    if (conversionInfo && converted !== amount) {
+        conversionInfo.innerHTML = `
+            <i class="fas fa-exchange-alt"></i> 
+            ≈ ${formatCurrency(converted, currencySettings.displayCurrency)}
+            <small style="color: var(--light-color);"> (1 ${currency} = ${currencies[currency].rate} ${currencySettings.baseCurrency})</small>
+        `;
+    } else if (conversionInfo) {
+        conversionInfo.innerHTML = '';
     }
 }
 
@@ -709,31 +815,91 @@ function handleCurrencyChange(type) {
 function initCurrencySystem() {
     console.log('Initializing multi-currency system...');
     
+    // Make sure currencies object exists
+    if (typeof currencies === 'undefined') {
+        console.error('Currencies object not defined');
+        return;
+    }
+    
     // Add currency selector to forms
     addCurrencySelector();
+    
+    // Add event listeners to amount inputs
+    const paymentAmount = document.getElementById('payment-amount');
+    const receiptAmount = document.getElementById('receipt-amount');
+    const paymentCurrency = document.getElementById('payment-currency');
+    const receiptCurrency = document.getElementById('receipt-currency');
+    
+    if (paymentAmount) {
+        paymentAmount.addEventListener('input', () => handleCurrencyChange('payment'));
+    }
+    if (receiptAmount) {
+        receiptAmount.addEventListener('input', () => handleCurrencyChange('receipt'));
+    }
+    if (paymentCurrency) {
+        paymentCurrency.addEventListener('change', () => handleCurrencyChange('payment'));
+    }
+    if (receiptCurrency) {
+        receiptCurrency.addEventListener('change', () => handleCurrencyChange('receipt'));
+    }
     
     // Update all currency displays
     refreshCurrencyDisplay();
     
     // Add currency button to header
     addCurrencyButton();
+    
+    console.log('Multi-currency system initialized');
 }
 
 /**
  * Add currency button to header
  */
 function addCurrencyButton() {
-    const headerControls = document.querySelector('.dark-mode-controls');
-    if (headerControls && !document.getElementById('currency-btn')) {
-        const currencyBtn = document.createElement('div');
-        currencyBtn.id = 'currency-btn';
-        currencyBtn.className = 'currency-btn';
-        currencyBtn.innerHTML = `<i class="fas fa-money-bill-wave"></i> ${currencySettings.displayCurrency}`;
-        currencyBtn.title = 'Currency Settings';
-        currencyBtn.onclick = () => showCurrencyModal();
-        
-        headerControls.insertBefore(currencyBtn, headerControls.firstChild);
+    // Find where to add the button
+    const darkModeControls = document.querySelector('.dark-mode-controls');
+    if (!darkModeControls) {
+        console.log('Dark mode controls not found, will retry');
+        // Retry after a short delay
+        setTimeout(addCurrencyButton, 500);
+        return;
     }
+    
+    // Check if button already exists
+    if (document.getElementById('currency-btn')) {
+        console.log('Currency button already exists');
+        return;
+    }
+    
+    const currencyBtn = document.createElement('div');
+    currencyBtn.id = 'currency-btn';
+    currencyBtn.className = 'currency-btn';
+    currencyBtn.innerHTML = `<i class="fas fa-money-bill-wave"></i> <span id="current-currency-code">${currencySettings.displayCurrency}</span>`;
+    currencyBtn.title = 'Currency Settings';
+    currencyBtn.onclick = () => showCurrencyModal();
+    currencyBtn.style.cssText = `
+        width: auto;
+        min-width: 6rem;
+        padding: 0 1.2rem;
+        height: 3.5rem;
+        border-radius: 2rem;
+        background: var(--bg-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--main-color);
+        transition: all 0.3s ease;
+        box-shadow: var(--box-shadow);
+        margin-right: 0.5rem;
+    `;
+    
+    // Add to beginning of dark mode controls
+    darkModeControls.insertBefore(currencyBtn, darkModeControls.firstChild);
+    console.log('Currency button added to header');
 }
 
 // ==================== BALANCE TRACKING FUNCTIONS ====================
@@ -768,53 +934,71 @@ function showBalanceAboveAmount(formType, paymentType, bankName = null) {
     const balances = getCurrentBalances();
     const amountGroup = document.querySelector(`#${formType} .amount-group`);
     
-    if (!amountGroup) return;
+    // Find the container where balance should be shown
+    let targetContainer = amountGroup;
+    if (!targetContainer) {
+        const amountInput = document.getElementById(`${formType}-amount`);
+        if (amountInput) {
+            targetContainer = amountInput.closest('.form-group');
+        }
+    }
+    
+    if (!targetContainer) return;
     
     // Remove existing balance display
     const existingDisplay = document.getElementById(`${formType}-balance-above`);
     if (existingDisplay) existingDisplay.remove();
     
-    // Create new balance display
+    // Create new balance display - ONE LINE VERSION
     const balanceDiv = document.createElement('div');
     balanceDiv.id = `${formType}-balance-above`;
+    balanceDiv.className = 'balance-display';
     balanceDiv.style.cssText = `
-        background: #e8f4fd;
+        background: var(--bg-color);
         border: 1px solid var(--main-color);
         border-radius: 0.5rem;
-        padding: 1rem;
+        padding: 0.8rem 1.2rem;
         margin-bottom: 1rem;
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     `;
     
     if (paymentType === 'cash') {
+        const isPositive = balances.cash >= 0;
         balanceDiv.innerHTML = `
-            <i class="fas fa-wallet" style="color: var(--main-color); font-size: 2rem;"></i>
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <i class="fas fa-wallet" style="color: var(--main-color); font-size: 1.4rem;"></i>
+                <span style="font-weight: 500;">Cash Balance:</span>
+            </div>
             <div>
-                <strong>Current Cash Balance:</strong> 
-                <span style="font-size: 1.8rem; font-weight: bold; color: ${balances.cash >= 0 ? '#28a745' : '#dc3545'}; margin-left: 1rem;">
-                    ${balances.cash.toFixed(2)}
+                <span style="font-size: 1.6rem; font-weight: bold; color: ${isPositive ? '#28a745' : '#dc3545'};">
+                    ${formatCurrency(balances.cash)}
                 </span>
             </div>
         `;
     } else if (paymentType === 'bank' && bankName) {
         const bankBalance = balances.banks[bankName] || 0;
+        const isPositive = bankBalance >= 0;
         const bankDisplay = banks.find(b => b.name === bankName)?.displayName || bankName;
         balanceDiv.innerHTML = `
-            <i class="fas fa-university" style="color: var(--main-color); font-size: 2rem;"></i>
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <i class="fas fa-university" style="color: var(--main-color); font-size: 1.4rem;"></i>
+                <span style="font-weight: 500;">${bankDisplay} Balance:</span>
+            </div>
             <div>
-                <strong>${bankDisplay} Balance:</strong> 
-                <span style="font-size: 1.8rem; font-weight: bold; color: ${bankBalance >= 0 ? '#28a745' : '#dc3545'}; margin-left: 1rem;">
-                    ${bankBalance.toFixed(2)}
+                <span style="font-size: 1.6rem; font-weight: bold; color: ${isPositive ? '#28a745' : '#dc3545'};">
+                    ${formatCurrency(bankBalance)}
                 </span>
             </div>
         `;
     }
     
-    // Insert before amount group
-    amountGroup.parentNode.insertBefore(balanceDiv, amountGroup);
+    // Insert before the target container
+    targetContainer.parentNode.insertBefore(balanceDiv, targetContainer);
 }
 
 function removeBalanceAbove(formType) {
@@ -863,45 +1047,6 @@ function validateAmount(amount, fieldName = 'Amount') {
     return { valid: true };
 }
 
-// ==================== BANK MANAGEMENT ====================
-let banks = JSON.parse(localStorage.getItem('banks')) || [
-    { id: 1, name: 'bank - sbl', displayName: 'Sonali Bank Limited (SBL)', accountNo: '' },
-    { id: 2, name: 'bank - jbl', displayName: 'Janata Bank Limited (JBL)', accountNo: '' },
-    { id: 3, name: 'bank - agrani', displayName: 'Agrani Bank Limited', accountNo: '' },
-    { id: 4, name: 'bank - rupali', displayName: 'Rupali Bank Limited', accountNo: '' },
-    { id: 5, name: 'bank - bdbl', displayName: 'Bangladesh Development Bank Limited (BDBL)', accountNo: '' },
-    { id: 6, name: 'bank - bkash', displayName: 'bKash (Mobile Banking)', accountNo: '' },
-    { id: 7, name: 'bank - nagad', displayName: 'Nagad (Mobile Banking)', accountNo: '' },
-    { id: 8, name: 'bank - rocket', displayName: 'Rocket (Dutch-Bangla Bank)', accountNo: '' },
-    { id: 9, name: 'bank - dbbl', displayName: 'Dutch-Bangla Bank Limited (DBBL)', accountNo: '' },
-    { id: 10, name: 'bank - ebbl', displayName: 'Eastern Bank Limited (EBL)', accountNo: '' },
-    { id: 11, name: 'bank - ibbl', displayName: 'Islami Bank Bangladesh Limited (IBBL)', accountNo: '' },
-    { id: 12, name: 'bank - pubali', displayName: 'Pubali Bank Limited', accountNo: '' },
-    { id: 13, name: 'bank - ucb', displayName: 'United Commercial Bank (UCB)', accountNo: '' },
-    { id: 14, name: 'bank - city', displayName: 'City Bank Limited', accountNo: '' },
-    { id: 15, name: 'bank - ncc', displayName: 'NCC Bank Limited', accountNo: '' },
-    { id: 16, name: 'bank - prime', displayName: 'Prime Bank Limited', accountNo: '' },
-    { id: 17, name: 'bank - southbangla', displayName: 'South Bangla Agriculture & Commerce Bank', accountNo: '' },
-    { id: 18, name: 'bank - mercantile', displayName: 'Mercantile Bank Limited', accountNo: '' },
-    { id: 19, name: 'bank - mutual', displayName: 'Mutual Trust Bank Limited (MTB)', accountNo: '' },
-    { id: 20, name: 'bank - standard', displayName: 'Standard Bank Limited', accountNo: '' },
-    { id: 21, name: 'bank - one', displayName: 'One Bank Limited', accountNo: '' },
-    { id: 22, name: 'bank - exim', displayName: 'EXIM Bank Limited', accountNo: '' },
-    { id: 23, name: 'bank - fsibl', displayName: 'First Security Islami Bank Limited', accountNo: '' },
-    { id: 24, name: 'bank - sjibl', displayName: 'Shahjalal Islami Bank Limited', accountNo: '' },
-    { id: 25, name: 'bank - al-arafah', displayName: 'Al-Arafah Islami Bank Limited', accountNo: '' },
-    { id: 26, name: 'bank - sibl', displayName: 'Social Islami Bank Limited (SIBL)', accountNo: '' },
-    { id: 27, name: 'bank - midland', displayName: 'Midland Bank Limited', accountNo: '' },
-    { id: 28, name: 'bank - modhumoti', displayName: 'Modhumoti Bank Limited', accountNo: '' },
-    { id: 29, name: 'bank - nrbc', displayName: 'NRB Bank Limited', accountNo: '' },
-    { id: 30, name: 'bank - trust', displayName: 'Trust Bank Limited', accountNo: '' },
-    { id: 31, name: 'bank - ab', displayName: 'AB Bank Limited', accountNo: '' },
-    { id: 32, name: 'bank - krishi', displayName: 'Bangladesh Krishi Bank (BKB)', accountNo: '' },
-    { id: 33, name: 'bank - rajuk', displayName: 'Rajshahi Krishi Unnayan Bank (RAKUB)', accountNo: '' },
-    { id: 34, name: 'bank - probashi', displayName: 'Probashi Kallyan Bank', accountNo: '' },
-    { id: 35, name: 'bank - ansar', displayName: 'Ansar VDP Unnayan Bank', accountNo: '' },
-    { id: 36, name: 'bank - grameen', displayName: 'Grameen Bank', accountNo: '' }
-];
 
 // ==================== SUB GROUP MANAGEMENT ====================
 
@@ -1301,9 +1446,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // If window.onclick is already defined, we need to preserve it
         const existingOnClick = window.onclick;
         window.onclick = function(event) {
-            // Call existing onclick if it exists
-            if (existingOnClick) existingOnclick(event);
-            
+
+            if (existingOnclick) {
+            existingOnclick(event);
+        }
             // Handle shortcuts modal close
             if (event.target === shortcutsModal) {
                 closeShortcutsModal();
@@ -1312,6 +1458,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('Keyboard shortcuts system initialized');
+
+    // Initialize currency system with a slight delay to ensure DOM is ready
+    setTimeout(() => {
+        if (typeof initCurrencySystem === 'function') {
+            initCurrencySystem();
+        }
+        
+        // Force refresh of currency selector if needed
+        const paymentCurrency = document.getElementById('payment-currency');
+        const receiptCurrency = document.getElementById('receipt-currency');
+        
+        if (paymentCurrency && paymentCurrency.options.length === 0) {
+            console.log('Refreshing currency selector...');
+            addCurrencySelector();
+        }
+        if (receiptCurrency && receiptCurrency.options.length === 0) {
+            addCurrencySelector();
+        }
+    }, 500);
 });
 
 function addDeleteAllButton() {
@@ -2762,17 +2927,28 @@ function handleTypeChange(type) {
         // Update subgroup datalist for cash (expense groups)
         updateSubGroupDatalist(type);
         
+        // Make sure currency selector is visible
+        const currencySelector = document.getElementById(`${type}-currency-selector`);
+        if (currencySelector) currencySelector.style.display = 'block';
+        
         setTimeout(() => {
-            document.getElementById(`${type}-ledger-input`).focus();
+            const ledgerInputEl = document.getElementById(`${type}-ledger-input`);
+            if (ledgerInputEl) ledgerInputEl.focus();
         }, 100);
+        
     } else {
         // Show bank section, hide entry section until bank is selected
         if (bankSection) bankSection.style.display = 'block';
         if (entrySection) entrySection.style.display = 'none';
         if (actionBtns) actionBtns.style.display = 'none';
         
+        // Hide currency selector until bank is selected
+        const currencySelector = document.getElementById(`${type}-currency-selector`);
+        if (currencySelector) currencySelector.style.display = 'none';
+        
         setTimeout(() => {
-            document.getElementById(`${type}-bank-input`).focus();
+            const bankInput = document.getElementById(`${type}-bank-input`);
+            if (bankInput) bankInput.focus();
         }, 100);
     }
 }
@@ -5677,10 +5853,8 @@ function toggleDarkMode() {
     
     if (isDarkMode) {
         disableDarkMode();
-        showNotification('Light mode activated', 'info');
     } else {
         enableDarkMode();
-        showNotification('Dark mode activated', 'info');
     }
     
     // Update settings
@@ -5865,7 +6039,6 @@ function setupDarkModeKeyboardShortcut() {
         if (e.ctrlKey && e.key === 'd') {
             e.preventDefault();
             toggleDarkMode();
-            showNotification('Dark mode toggled via keyboard', 'info');
         }
     });
 }
@@ -6433,6 +6606,9 @@ function addFloatingHelpButton() {
     document.body.appendChild(helpBtn);
     
     console.log('Floating help button added');
+}
+function showNotification(message, type = 'info') {
+    alert(`${type.toUpperCase()}: ${message}`);
 }
 
 // ==================== END OF KEYBOARD SHORTCUTS HELP ====================
