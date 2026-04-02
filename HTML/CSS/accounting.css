@@ -2549,3 +2549,96 @@ kbd {
         min-width: auto;
     }
 }
+/* Required field indicator */
+.form-group label span.required {
+    color: #dc3545;
+    font-size: 1.2rem;
+}
+
+/* Bank display with account number */
+.bank-with-account {
+    font-family: monospace;
+    font-size: 1.3rem;
+}
+
+.bank-account-number {
+    color: var(--light-color);
+    font-size: 1.1rem;
+    margin-left: 0.5rem;
+}
+/* Bank Name Datalist Styling */
+#bank-name-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--white);
+    border: var(--border);
+    border-radius: 0.5rem;
+}
+
+/* Modal bank name input wrapper */
+#new-bank-modal .searchable-select-wrapper {
+    width: 100%;
+}
+
+#new-bank-modal .searchable-select {
+    width: 100%;
+    padding: 1.2rem;
+    font-size: 1.6rem;
+    border: var(--border);
+    border-radius: 0.5rem;
+    background: var(--white);
+    transition: all 0.3s ease;
+}
+
+#new-bank-modal .searchable-select:focus {
+    border-color: var(--main-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(60, 64, 198, 0.1);
+}
+
+/* Dark mode styles */
+.dark-mode #new-bank-modal .searchable-select {
+    background: var(--bg-color);
+    color: var(--white);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode #bank-name-list {
+    background: var(--white);
+    color: var(--black);
+}
+/* Make New Ledger Button Match New Bank Button */
+.new-ledger-btn,
+.journal-new-ledger-btn {
+    padding: 1.2rem 2rem;
+    background: var(--secondary-color);
+    color: var(--white);
+    border: none;
+    border-radius: .5rem;
+    font-size: 1.4rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 4.8rem;
+    min-width: 8rem;
+}
+
+.new-ledger-btn:hover,
+.journal-new-ledger-btn:hover {
+    background: #007a28;
+    transform: translateY(-2px);
+}
+
+.new-ledger-btn i,
+.journal-new-ledger-btn i {
+    font-size: 1.4rem;
+}
+
+/* For the payment/receipt form */
+.searchable-select-wrapper .new-ledger-btn {
+    margin-left: 0.5rem;
+}

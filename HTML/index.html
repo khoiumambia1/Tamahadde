@@ -147,12 +147,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div style="flex: 1;">
-                                <div class="form-group">
-                                    <label for="payment-account"><i class="fas fa-credit-card"></i> account no.</label>
-                                    <input type="text" id="payment-account" placeholder="account number">
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -189,26 +183,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Sub-group Selection (Searchable) -->
-                            <div style="flex: 1.5;">
-                                <div class="form-group">
-                                    <label for="payment-subgroup-input"><i class="fas fa-layer-group"></i> sub group</label>
-                                    <div class="searchable-select-wrapper">
-                                        <input type="text" 
-                                            id="payment-subgroup-input" 
-                                            class="searchable-select" 
-                                            placeholder="Type to search sub group..." 
-                                            autocomplete="off"
-                                            list="payment-subgroup-list">
-                                        <datalist id="payment-subgroup-list"></datalist>
-                                        <input type="hidden" id="payment-subgroup" name="payment-subgroup">
-                                        <button type="button" class="new-subgroup-btn" onclick="showNewSubGroupModal('payment')">
-                                            <i class="fas fa-plus"></i> new
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
                             <!-- Amount -->
                             <div style="flex: 1;">
                                 <div class="form-group">
@@ -220,20 +194,6 @@
                         
                         <!-- Hidden field for new ledger name -->
                         <input type="hidden" id="payment-new-ledger" name="payment-new-ledger">
-                        
-                        <!-- New Sub Group Input (shown when adding new sub group) -->
-                        <div id="payment-new-subgroup-container" style="display: none; margin-top: 1rem;">
-                            <div style="display: flex; gap: 1rem; align-items: center;">
-                                <div style="flex: 2;">
-                                    <label for="payment-new-subgroup" style="display: none;">New subgroup name</label>
-                                    <input type="text" id="payment-new-subgroup" placeholder="Enter new sub group name" class="form-control">
-                                </div>
-                                <div style="flex: 1; display: flex; gap: 0.5rem;">
-                                    <button type="button" class="save-btn" style="padding: 0.8rem;" onclick="saveNewSubGroupFromInput('payment')">Save</button>
-                                    <button type="button" class="cancel-btn" style="padding: 0.8rem;" onclick="cancelNewSubGroupInput('payment')">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Balance Display (shows above amount) -->
@@ -306,12 +266,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div style="flex: 1;">
-                                <div class="form-group">
-                                    <label for="receipt-account"><i class="fas fa-credit-card"></i> account no.</label>
-                                    <input type="text" id="receipt-account" placeholder="account number">
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -348,25 +302,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Sub-group Selection (Searchable) -->
-                            <div style="flex: 1.5;">
-                                <div class="form-group">
-                                    <label for="receipt-subgroup-input"><i class="fas fa-layer-group"></i> sub group</label>
-                                    <div class="searchable-select-wrapper">
-                                        <input type="text" 
-                                            id="receipt-subgroup-input" 
-                                            class="searchable-select" 
-                                            placeholder="Type to search sub group..." 
-                                            autocomplete="off"
-                                            list="receipt-subgroup-list">
-                                        <datalist id="receipt-subgroup-list"></datalist>
-                                        <input type="hidden" id="receipt-subgroup" name="receipt-subgroup">
-                                        <button type="button" class="new-subgroup-btn" onclick="showNewSubGroupModal('receipt')">
-                                            <i class="fas fa-plus"></i> new
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                             
                             <!-- Amount -->
                             <div style="flex: 1;">
@@ -379,20 +314,6 @@
                         
                         <!-- Hidden field for new ledger name -->
                         <input type="hidden" id="receipt-new-ledger" name="receipt-new-ledger">
-                        
-                        <!-- New Sub Group Input (shown when adding new sub group) -->
-                        <div id="receipt-new-subgroup-container" style="display: none; margin-top: 1rem;">
-                            <div style="display: flex; gap: 1rem; align-items: center;">
-                                <div style="flex: 2;">
-                                    <label for="receipt-new-subgroup" style="display: none;">New subgroup name</label>
-                                    <input type="text" id="receipt-new-subgroup" placeholder="Enter new sub group name" class="form-control">
-                                </div>
-                                <div style="flex: 1; display: flex; gap: 0.5rem;">
-                                    <button type="button" class="save-btn" style="padding: 0.8rem;" onclick="saveNewSubGroupFromInput('receipt')">Save</button>
-                                    <button type="button" class="cancel-btn" style="padding: 0.8rem;" onclick="cancelNewSubGroupInput('receipt')">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Balance Display (shows above amount) -->
@@ -631,20 +552,21 @@
                 <div class="form-group">
                     <label for="modal-ledger-type">ledger type *</label>
                     <select id="modal-ledger-type" onchange="updateGroupDropdown()">
-                        <option value="asset">asset</option>
-                        <option value="liability">liability</option>
-                        <option value="income">income</option>
-                        <option value="expense">expense</option>
-                        <option value="equity">equity</option>
+                        <option value="asset">Asset</option>
+                        <option value="liability">Liability</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                        <option value="equity">Equity</option>
                     </select>
                 </div>
                 <div class="form-group" id="modal-group-container">
-                    <label for="modal-ledger-group">P&L Group (optional)</label>
+                    <label for="modal-ledger-group">Ledger Group *</label>
                     <select id="modal-ledger-group">
-                        <option value="">-- No Group --</option>
+                        <option value="">-- Select Group --</option>
                     </select>
                     <small style="display: block; color: #666; margin-top: 0.5rem; font-size: 1.2rem;">
-                        Select a group to appear grouped in Profit & Loss report
+                        <i class="fas fa-info-circle"></i> 
+                        <span id="group-help-text">Select where this ledger appears in Balance Sheet or P&L</span>
                     </small>
                 </div>
                 <div class="modal-btns">
@@ -655,25 +577,46 @@
         </div>
 
         <!-- New Bank Modal -->
-        <div id="new-bank-modal" class="modal">
-            <div class="modal-content">
-                <span class="close-modal" onclick="closeBankModal()">&times;</span>
-                <h3><i class="fas fa-plus-circle"></i> create new bank</h3>
-                <input type="hidden" id="bank-modal-entry-type">
-                <div class="form-group">
-                    <label for="modal-bank-name">bank name *</label>
-                    <input type="text" id="modal-bank-name" placeholder="enter bank name (e.g., bank - axis)">
-                </div>
-                <div class="form-group">
-                    <label for="modal-bank-account">account number (optional)</label>
-                    <input type="text" id="modal-bank-account" placeholder="enter account number">
-                </div>
-                <div class="modal-btns">
-                    <button type="button" class="save-btn" onclick="createNewBank()"><i class="fas fa-check"></i> create</button>
-                    <button type="button" class="cancel-btn" onclick="closeBankModal()"><i class="fas fa-times"></i> cancel</button>
-                </div>
+<div id="new-bank-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeBankModal()">&times;</span>
+        <h3><i class="fas fa-plus-circle"></i> create new bank</h3>
+        <input type="hidden" id="bank-modal-entry-type">
+        
+        <!-- Bank Name with Searchable Dropdown -->
+        <div class="form-group">
+            <label for="modal-bank-name">bank name *</label>
+            <div class="searchable-select-wrapper">
+                <input type="text" 
+                       id="modal-bank-name" 
+                       class="searchable-select" 
+                       placeholder="Type to search or enter new bank name..."
+                       autocomplete="off"
+                       list="bank-name-list">
+                <datalist id="bank-name-list">
+                    <!-- Common bank names will be populated here -->
+                </datalist>
             </div>
+            <small style="display: block; color: #666; margin-top: 0.3rem;">
+                <i class="fas fa-info-circle"></i> You can select from existing banks or type a new one
+            </small>
         </div>
+        
+        <!-- Account Number (Required) -->
+        <div class="form-group">
+            <label for="modal-bank-account">account number * <span style="color: #dc3545;">(required)</span></label>
+            <input type="text" id="modal-bank-account" placeholder="enter account number">
+            <small style="display: block; color: #666; margin-top: 0.3rem;">
+                <i class="fas fa-credit-card"></i> This will appear next to the bank name in dropdowns
+            </small>
+        </div>
+        
+        <div class="modal-btns">
+            <button type="button" class="save-btn" onclick="createNewBank()"><i class="fas fa-check"></i> create</button>
+            <button type="button" class="cancel-btn" onclick="closeBankModal()"><i class="fas fa-times"></i> cancel</button>
+        </div>
+    </div>
+</div>
 
         <!-- Manage Ledgers Modal -->
         <div id="manage-ledgers-modal" class="modal">
